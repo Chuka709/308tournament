@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Багийн тэмцээн — Шууд дүн</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f4f9;--surface:#fff;--surface2:#eceef6;--text:#12172b;--muted:#5b6380;--line:#dde0ee;
+  --a:#b85f00;--b:#00796e;
+  --ok:#17853f;--ok-soft:#d9f3e2;--live:#a86400;--live-soft:#ffe9bd;--bad:#c0392b;--bad-soft:#fbd9d4;
+  --shadow:0 1px 2px rgba(18,23,43,.06),0 10px 30px rgba(18,23,43,.07);
+  --display:'Unbounded','Manrope',system-ui,sans-serif;--body:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080c19;--surface:#121931;--surface2:#1a2342;--text:#eef1fb;--muted:#a3adcf;--line:#26305a;
+  --a:#ffb02e;--b:#2dd4bf;--ok:#4ade80;--ok-soft:#10361f;--live:#ffc65c;--live-soft:#3d2d08;--bad:#ff8a7a;--bad-soft:#47201b;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{
+  --bg:#080c19;--surface:#121931;--surface2:#1a2342;--text:#eef1fb;--muted:#a3adcf;--line:#26305a;
+  --a:#ffb02e;--b:#2dd4bf;--ok:#4ade80;--ok-soft:#10361f;--live:#ffc65c;--live-soft:#3d2d08;--bad:#ff8a7a;--bad-soft:#47201b;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px rgba(0,0,0,.35);}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;font-family:var(--body);color:var(--text);line-height:1.45;min-height:100vh;background:
+  radial-gradient(900px 400px at 8% -10%,color-mix(in srgb,var(--a) 13%,transparent),transparent 70%),
+  radial-gradient(900px 400px at 96% -5%,color-mix(in srgb,var(--b) 13%,transparent),transparent 70%),var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 56px}
+:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+h1{font-family:var(--display);font-size:clamp(20px,3.4vw,30px);margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--muted);box-shadow:var(--shadow)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+.dot.off{background:var(--muted);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+button,select,input{font:inherit;color:var(--text)}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--surface);padding:8px 13px;border-radius:999px;font-size:13px;box-shadow:var(--shadow)}
+.btn:hover{border-color:var(--muted)} .btn[disabled]{opacity:.6;cursor:progress}
+.spin{display:inline-block}.loading .spin{animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.banner{margin:0 0 14px;padding:12px 14px;border-radius:12px;font-size:14px;border:1px solid var(--line);background:var(--surface2)}
+.banner.warn{background:var(--live-soft);border-color:var(--live)}
+.banner.err{background:var(--bad-soft);border-color:var(--bad)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--surface2);padding:1px 6px;border-radius:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:20px}
+.hero{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:26px 20px}
+.team{text-align:center;min-width:0}
+.team .nm{font-weight:800;font-size:clamp(15px,2.4vw,22px);display:inline-flex;align-items:center;gap:8px;max-width:100%}
+.team .nm span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team .tag{width:12px;height:12px;border-radius:4px;flex:none}
+.team.a .tag{background:var(--a)} .team.b .tag{background:var(--b)}
+.team .big{font-family:var(--display);font-weight:800;font-size:clamp(56px,13vw,132px);line-height:1;margin-top:6px;letter-spacing:-.04em}
+.team.a .big{color:var(--a)} .team.b .big{color:var(--b)}
+.team .gm{color:var(--muted);font-size:13px;margin-top:6px}
+.team.lead .big{filter:drop-shadow(0 6px 22px color-mix(in srgb,currentColor 35%,transparent))}
+.mid{text-align:center;min-width:150px}
+.vs{font-family:var(--display);font-size:13px;color:var(--muted);letter-spacing:.2em}
+.stat{margin-top:10px;font-weight:800;font-size:15px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin:12px auto 6px;width:160px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b));border-radius:99px;transition:width .6s}
+.small{font-size:12.5px;color:var(--muted)}
+.winner{grid-column:1/-1;text-align:center;padding:14px;border-radius:14px;font-family:var(--display);font-size:clamp(14px,2.4vw,20px);background:var(--ok-soft);color:var(--ok);margin-top:6px}
+.how{margin:12px 2px 0;font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+.how span::before{content:"•";margin-right:6px;color:var(--text)}
+h2{font-family:var(--display);font-size:16px;margin:32px 0 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h2 .line{flex:1;height:1px;background:var(--line);min-width:20px}
+h2 .lg{font-family:var(--body);font-weight:600;font-size:13px;color:var(--muted);display:inline-flex;gap:14px}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.lg .ia{background:var(--a)} .lg .ib{background:var(--b)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ev{padding:16px}
+.ev .t{font-weight:800;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.ev .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px dashed var(--line);font-size:14px}
+.ev .row:first-of-type{border-top:0}
+.sc2{font-family:var(--display);font-weight:600;font-size:18px}
+.sc2 .x{color:var(--muted);margin:0 5px}.sc2 .ca{color:var(--a)}.sc2 .cb{color:var(--b)}
+.match{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--surface);min-width:0}
+.match.live{border-color:var(--live);background:linear-gradient(0deg,var(--live-soft),var(--surface))}
+.match.err{border-color:var(--bad);background:var(--bad-soft)}
+.match.ph{opacity:.4;border-style:dashed;display:grid;place-items:center;color:var(--muted)}
+.mh{display:flex;gap:6px 10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.mh .sp{flex:1}
+.gtag{font-weight:700}
+.chip{padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.chip.done{background:var(--ok-soft);color:var(--ok)}.chip.live{background:var(--live-soft);color:var(--live)}.chip.err{background:var(--bad-soft);color:var(--bad)}
+.mp{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.pl{font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.pl.b{justify-content:flex-end;text-align:right}
+.pl::before{content:"";width:8px;height:8px;border-radius:3px;flex:none}
+.pl.a::before{background:var(--a)}.pl.b::before{background:var(--b);order:2}
+.pl.win{font-weight:800}.pl.win.a{color:var(--a)}.pl.win.b{color:var(--b)}
+.sc{font-family:var(--display);font-weight:600;font-size:15px;padding:3px 10px;border-radius:9px;background:var(--surface2);white-space:nowrap}
+.filters{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.fgroup{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.flabel{font-size:12.5px;color:var(--muted);font-weight:700;margin-right:2px}
+.fchip{cursor:pointer;border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:99px;font-size:13.5px}
+.fchip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+select{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:99px;font-size:13.5px;max-width:100%}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--text)}
+.linkbtn{background:none;border:0;color:var(--text);text-decoration:underline;cursor:pointer;font-size:13px;padding:4px}
+.round,.hdrrow{display:grid;grid-template-columns:110px repeat(var(--n,3),minmax(0,1fr));gap:10px;align-items:stretch}
+.hdrrow{font-size:12.5px;color:var(--muted);font-weight:700;padding:0 0 8px}
+.round{padding:10px 0;border-top:1px solid var(--line)}
+.hdrrow+.round{border-top:0}
+.round.cur{background:linear-gradient(90deg,color-mix(in srgb,var(--live) 16%,transparent),transparent);border-radius:14px;padding-left:10px;margin-left:-10px;border-top-color:transparent}
+.rhead{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.rn{font-family:var(--display);font-weight:800;font-size:14px}
+.now{font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--live);color:var(--bg)}
+.pcard{display:flex;gap:6px 22px;flex-wrap:wrap;align-items:center;padding:12px 16px;margin-bottom:12px;border-radius:14px;background:var(--surface2);font-size:14px}
+.pcard b{font-family:var(--display);font-size:15px}
+.boards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lb{list-style:none;margin:0;padding:0}
+.lbh,.lb li{display:grid;grid-template-columns:34px minmax(0,1fr) 56px 60px;gap:10px;align-items:center}
+.lbh{font-size:12px;color:var(--muted);font-weight:700;padding:6px 0 4px}
+.lbh span:nth-child(n+3),.lb .w,.lb .d{text-align:center}
+.lb li{padding:10px 0;border-top:1px solid var(--line)}
+.rk{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:var(--surface2);font-size:14px}
+.lb li:nth-child(1) .rk{background:#f5c542;color:#3a2a00}.lb li:nth-child(2) .rk{background:#cfd5e3;color:#222a3d}.lb li:nth-child(3) .rk{background:#d99a66;color:#35200d}
+.lb .who{min-width:0}.lb .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .who span{font-size:12.5px;color:var(--muted)}
+.lb .w{font-family:var(--display);font-weight:800;font-size:18px}
+.lb .d{font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);padding:22px;text-align:center}
+.skel{height:14px;border-radius:8px;background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 1.4s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
+@media (min-width:821px){#schedule .sport-lbl{display:none}}
+@media (max-width:820px){
+  .grid3,.boards{grid-template-columns:1fr}
+  .round{grid-template-columns:1fr}.hdrrow{display:none}
+  .rhead{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .match.ph{display:none}
+}
+@media (max-width:560px){
+  .hero{grid-template-columns:1fr 1fr;padding:20px 12px}
+  .mid{grid-column:1/-1;order:3}
+  .how{flex-direction:column}
+}
+:fullscreen body{overflow:auto}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="title">Багийн тэмцээн</h1>
+      <div class="sub">🎯 Дартс · 🏓 Ширээний теннис · 🎱 Биллиард</div>
+    </div>
+    <div class="tools" id="tools">
+      <span class="pill" role="status"><span class="dot off" id="dot"></span><span id="upd">Ачаалж байна…</span></span>
+      <button class="btn" id="refresh" type="button"><span class="spin">↻</span> Шинэчлэх</button>
+      <button class="btn" id="fs" type="button">⛶ Бүтэн дэлгэц</button>
+      <button class="btn" id="theme" type="button" aria-label="Харанхуй эсвэл цайвар горим сонгох">◐ Горим</button>
+    </div>
+  </header>
+  <noscript><div class="banner err">Энэ хуудас ажиллахын тулд JavaScript шаардлагатай.</div></noscript>
+  <div id="banners"></div>
+
+  <section class="card hero" id="hero" aria-label="Багийн нийт оноо">
+    <div class="team a"><div class="skel" style="width:60%;margin:0 auto"></div><div class="skel" style="height:70px;width:40%;margin:16px auto 0"></div></div>
+    <div class="mid"><div class="vs">VS</div></div>
+    <div class="team b"><div class="skel" style="width:60%;margin:0 auto"></div><div class="skel" style="height:70px;width:40%;margin:16px auto 0"></div></div>
+  </section>
+  <div class="how">
+    <span>Хожсон тоглолт бүр <b>1 оноо</b></span>
+    <span>Эрэгтэй түрүүлж <b>3</b>, эмэгтэй түрүүлж <b>2</b> гейм хожно</span>
+    <span>Нэг тойрогт гурван төрлийн тоглолт зэрэг явагдана</span>
+  </div>
+
+  <h2>Төрөл тус бүрийн дүн <span class="line"></span><span class="lg" id="legend"></span></h2>
+  <div class="grid3" id="events"></div>
+
+  <h2 id="nowh">Одоогийн тойрог <span class="line"></span></h2>
+  <div id="now"></div>
+
+  <h2>Тоглолтын хуваарь <span class="line"></span></h2>
+  <div class="filters" id="filters"></div>
+  <div id="pcard"></div>
+  <div class="card" id="schedule"></div>
+
+  <h2>Тамирчдын эрэмбэ <span class="line"></span></h2>
+  <div class="boards" id="boards"></div>
+
+  <footer>Эрэмбэ: хожсон тоглолтын тоо, тэнцвэл гейм зөрүүгээр (зөрүү = хожсон гейм − алдсан гейм). Дүн автоматаар шинэчлэгдэнэ.</footer>
+</div>
+
+<script>
+/* ============ ТОХИРГОО — зөвхөн энд засна ============ */
+const CONFIG = {
+  SHEET_ID: "179VXSagdRU_BAx4edHgdSEIEvdJDJRHk3H_rRJ3kU3o",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
+  REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
+  TITLE: "Багийн тэмцээн", // хуудасны гарчиг
+  TABS: { roster: "Тамирчид", darts: "Дартс", tennis: "Теннис", pool: "Биллиард" } // Sheets доторх табын нэрс
+};
+/* ======================================================= */
+
+const SPORTS = [
+  {key:'darts', label:'Дартс', icon:'🎯'},
+  {key:'tennis', label:'Ширээний теннис', icon:'🏓'},
+  {key:'pool', label:'Биллиард', icon:'🎱'}
+];
+const DONE='Дууссан', LIVE='Тоглож байна', PEND='Хүлээгдэж байна', ERR='АЛДАА';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Google Sheets (gviz) ---------- */
+async function gviz(tab, range){
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(tab)}&range=${range}`;
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error(`«${tab}» хуудас: HTTP ${res.status}`);
+  const text = await res.text();
+  const i = text.indexOf('{'), j = text.lastIndexOf('}');
+  if(i < 0) throw new Error(`«${tab}» хуудас: хариу буруу байна`);
+  const json = JSON.parse(text.slice(i, j + 1));
+  if(json.status === 'error') throw new Error(`«${tab}» хуудас: ` + (json.errors?.[0]?.detailed_message || 'алдаа'));
+  return json.table.rows.map(r => (r.c || []).map(c => c ? {v:c.v, f:c.f} : {v:null, f:null}));
+}
+const txt = c => (c && c.v != null) ? String(c.v) : '';
+const num = c => (c && c.v != null && c.v !== '') ? Number(c.v) : null;
+
+async function loadFromSheet(){
+  const T = CONFIG.TABS;
+  const [roster, ...sp] = await Promise.all([
+    gviz(T.roster, 'A3:E16'), gviz(T.darts, 'A5:L17'), gviz(T.tennis, 'A5:L17'), gviz(T.pool, 'A5:L17')
+  ]);
+  const teamA = txt(roster[0]?.[1]) || 'А баг', teamB = txt(roster[1]?.[1]) || 'Б баг';
+  const players = roster.slice(4).filter(r => txt(r[0])).map(r => ({
+    code: txt(r[0]), team: txt(r[1]), gender: txt(r[2]), name: txt(r[3]) || txt(r[0])
+  }));
+  const matches = [];
+  SPORTS.forEach((s, i) => sp[i].forEach(r => {
+    if(!txt(r[1])) return;
+    matches.push({
+      sport:s.key, round:num(r[0]), aCode:txt(r[1]), aName:txt(r[2]), bCode:txt(r[3]), bName:txt(r[4]),
+      fa:num(r[5]), fb:num(r[6]), status:txt(r[7]) || PEND, winTeam:txt(r[8]), winCode:txt(r[9]),
+      gender:txt(r[10]), target:num(r[11])
+    });
+  }));
+  if(!matches.length) throw new Error('Тоглолтын жагсаалт хоосон байна. Табын нэрс (CONFIG.TABS) Sheets-тэй таарч байгаа эсэхийг шалгана уу.');
+  return {teamA, teamB, players, matches};
+}
+
+/* ---------- Тооцоолол ---------- */
+function compute(raw){
+  const total = raw.matches.length;
+  const done = raw.matches.filter(m => m.status === DONE);
+  const errors = raw.matches.filter(m => m.status === ERR).length;
+  const pts = {A:0, B:0}, games = {A:0, B:0};
+  const bySport = {};
+  SPORTS.forEach(s => bySport[s.key] = {Эрэгтэй:{A:0,B:0}, Эмэгтэй:{A:0,B:0}});
+  done.forEach(m => {
+    if(m.winTeam in pts) pts[m.winTeam]++;
+    games.A += m.fa||0; games.B += m.fb||0;
+    if(bySport[m.sport][m.gender] && m.winTeam in pts) bySport[m.sport][m.gender][m.winTeam]++;
+  });
+  const st = {};
+  raw.players.forEach(p => st[p.code] = {...p, played:0, wins:0, gw:0, gl:0});
+  done.forEach(m => {
+    const a = st[m.aCode], b = st[m.bCode];
+    if(a){a.played++; a.gw += m.fa||0; a.gl += m.fb||0; if(m.winCode===m.aCode) a.wins++;}
+    if(b){b.played++; b.gw += m.fb||0; b.gl += m.fa||0; if(m.winCode===m.bCode) b.wins++;}
+  });
+  const sorted = g => Object.values(st).filter(p => p.gender === g)
+    .sort((x,y) => y.wins - x.wins || (y.gw - y.gl) - (x.gw - x.gl) || x.code.localeCompare(y.code));
+  const men = sorted('Эрэгтэй'), women = sorted('Эмэгтэй');
+  [men, women].forEach(l => l.forEach((p, i) => p.pos = i + 1));
+  const rounds = [];
+  const nRounds = Math.max(0, ...raw.matches.map(m => m.round || 0));
+  for(let n = 1; n <= nRounds; n++){
+    const ms = SPORTS.map(s => raw.matches.find(m => m.sport === s.key && m.round === n) || null);
+    rounds.push({n, matches: ms, complete: ms.every(m => m && m.status === DONE)});
+  }
+  const cur = rounds.findIndex(r => !r.complete);
+  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st};
+}
+
+/* ---------- DEMO өгөгдөл ---------- */
+function demoRaw(){
+  const names = {A1:'Бат',A2:'Дорж',A3:'Ганаа',B1:'Тэмүүлэн',B2:'Эрдэнэ',B3:'Саруул',A4:'Оюна',A5:'Номин',B4:'Цэцэг',B5:'Болор'};
+  const players = Object.keys(names).map(c => ({code:c, team:c[0], gender:'45'.includes(c[1]) ? 'Эмэгтэй' : 'Эрэгтэй', name:names[c]}));
+  const sched = [
+   ['A4-B4','A2-B1','A3-B3'],['A2-B3','A1-B1','A3-B2'],['A2-B2','A5-B4','A3-B1'],['A1-B2','A5-B5','A4-B4'],
+   ['A3-B1','A1-B3','A5-B5'],['A3-B3','A2-B2','A1-B1'],['A4-B5','A3-B1','A2-B2'],['A5-B5','A1-B2','A2-B3'],
+   ['A1-B1','A3-B3','A4-B5'],['A2-B1','A3-B2','A5-B4'],['A1-B3','A4-B4','A2-B1'],['A5-B4','A2-B3','A1-B2'],['A3-B2','A4-B5','A1-B3']];
+  const matches = [];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  sched.forEach((r, ri) => r.forEach((pair, si) => {
+    const [a, b] = pair.split('-'); const woman = '45'.includes(a[1]); const target = woman ? 2 : 3;
+    const m = {sport:SPORTS[si].key, round:ri+1, aCode:a, bCode:b, aName:names[a], bName:names[b],
+      fa:null, fb:null, status:PEND, winTeam:'', winCode:'', gender:woman?'Эмэгтэй':'Эрэгтэй', target};
+    if(ri < 6){
+      const aWins = rnd() < .5, loser = Math.floor(rnd() * target);
+      m.fa = aWins ? target : loser; m.fb = aWins ? loser : target; m.status = DONE;
+      m.winTeam = aWins ? 'A' : 'B'; m.winCode = aWins ? a : b;
+    } else if(ri === 6){
+      if(si < 2){ m.fa = si === 0 ? 1 : 2; m.fb = 1; m.status = LIVE; }
+    }
+    matches.push(m);
+  }));
+  return {teamA:'Ирвэс', teamB:'Бар', players, matches};
+}
+
+/*DOM*/
+const state = {sport:'all', player:'', hideDone:false, data:null, demo:false, lastOk:null, err:null, fkey:''};
+const $ = id => document.getElementById(id);
+const teamName = (d, t) => t === 'A' ? d.teamA : d.teamB;
+
+function matchHTML(m, ph){
+  if(!m || ph) return `<div class="match ph" aria-hidden="true">—</div>`;
+  const cls = m.status === DONE ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : 'pend';
+  const sp = SPORTS.find(s => s.key === m.sport), g = m.gender === 'Эмэгтэй';
+  const aw = m.status === DONE && m.winTeam === 'A', bw = m.status === DONE && m.winTeam === 'B';
+  const sc = m.status === PEND ? 'vs' : `${m.fa ?? 0} : ${m.fb ?? 0}`;
+  return `<div class="match ${cls}">
+    <div class="mh"><span class="sport-lbl">${sp.icon} ${esc(sp.label)}</span><span class="gtag">${g ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</span><span>түрүүлж ${m.target || (g ? 2 : 3)}</span><span class="sp"></span><span class="chip ${cls}">${esc(m.status)}</span></div>
+    <div class="mp"><span class="pl a ${aw ? 'win' : ''}">${aw ? '✓ ' : ''}${esc(m.aName)}</span><span class="sc">${sc}</span><span class="pl b ${bw ? 'win' : ''}">${bw ? '✓ ' : ''}${esc(m.bName)}</span></div></div>`;
+}
+
+function renderHero(d){
+  const lead = d.pts.A > d.pts.B ? 'A' : d.pts.B > d.pts.A ? 'B' : '';
+  const finished = d.total > 0 && d.doneCount === d.total;
+  let status;
+  if(!d.doneCount) status = 'Тэмцээн эхлээгүй';
+  else if(!finished) status = lead ? `${teamName(d, lead)} тэргүүлж байна` : 'Тэнцэж байна';
+  else status = 'Тэмцээн дууслаа';
+  let winner = '';
+  if(finished){
+    const gd = d.games.A - d.games.B, w = lead || (gd ? (gd > 0 ? 'A' : 'B') : '');
+    winner = w ? `🏆 ${esc(teamName(d, w))} — ХОЖЛОО${lead ? '' : ' (гейм зөрүүгээр)'}` : '🤝 Тэнцлээ — шийдвэрлэх тоглолт хэрэгтэй';
+  }
+  const pct = d.total ? Math.round(d.doneCount / d.total * 100) : 0;
+  const side = (t, cls) => `<div class="team ${cls} ${lead === t ? 'lead' : ''}"><div class="nm"><span class="tag"></span><span class="t">${esc(teamName(d, t))}</span></div><div class="big" aria-label="${esc(teamName(d, t))} ${d.pts[t]} оноо">${d.pts[t]}</div><div class="gm">Хожсон гейм: ${d.games[t]}</div></div>`;
+  $('hero').innerHTML = side('A', 'a') +
+    `<div class="mid"><div class="vs">VS</div><div class="stat">${esc(status)}</div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div><div class="small">${d.doneCount} / ${d.total} тоглолт дууссан</div></div>` +
+    side('B', 'b') + (winner ? `<div class="winner">${winner}</div>` : '');
+}
+
+function renderEvents(d){
+  $('legend').innerHTML = `<span><i class="ia"></i>${esc(d.teamA)}</span><span><i class="ib"></i>${esc(d.teamB)}</span>`;
+  $('events').innerHTML = SPORTS.map(s => {
+    const row = (g, lab) => `<div class="row"><span>${lab}</span><span class="sc2" aria-label="${esc(d.teamA)} ${d.bySport[s.key][g].A}, ${esc(d.teamB)} ${d.bySport[s.key][g].B}"><span class="ca">${d.bySport[s.key][g].A}</span><span class="x">:</span><span class="cb">${d.bySport[s.key][g].B}</span></span></div>`;
+    return `<div class="card ev"><div class="t"><span>${s.icon}</span>${esc(s.label)}</div>${row('Эрэгтэй', '♂ Эрэгтэй')}${row('Эмэгтэй', '♀ Эмэгтэй')}</div>`;
+  }).join('');
+}
+
+function renderNow(d){
+  if(d.cur < 0){ $('nowh').firstChild.textContent = 'Тойргууд '; $('now').innerHTML = `<div class="card empty">Бүх тойрог дууссан.</div>`; return; }
+  $('nowh').firstChild.textContent = `Одоогийн тойрог — ${d.rounds[d.cur].n}-р тойрог `;
+  const nx = d.rounds[d.cur + 1];
+  $('now').innerHTML = `<div class="grid3">${d.rounds[d.cur].matches.map(m => matchHTML(m)).join('')}</div>` +
+    (nx ? `<div class="small" style="margin:18px 0 8px"><b>Дараагийн тойрог — ${nx.n}-р тойрог</b></div><div class="grid3">${nx.matches.map(m => matchHTML(m)).join('')}</div>` : '');
+}
+
+function renderFilters(d){
+  const key = JSON.stringify([d.teamA, d.teamB, d.players.map(p => p.name), state.sport, state.player, state.hideDone]);
+  if(key === state.fkey) return; state.fkey = key;
+  const f = [{k:'all', l:'Бүгд'}, ...SPORTS.map(s => ({k:s.key, l:s.icon + ' ' + s.label}))];
+  const opts = ['<option value="">Бүгд</option>'].concat(
+    d.players.map(p => `<option value="${esc(p.code)}" ${state.player === p.code ? 'selected' : ''}>${esc(p.name)} (${esc(teamName(d, p.team))})</option>`));
+  const active = state.sport !== 'all' || state.player || state.hideDone;
+  $('filters').innerHTML =
+    `<div class="fgroup"><span class="flabel">Төрөл:</span>${f.map(x => `<button type="button" class="fchip ${state.sport === x.k ? 'on' : ''}" data-s="${x.k}" aria-pressed="${state.sport === x.k}">${esc(x.l)}</button>`).join('')}</div>` +
+    `<div class="fgroup"><label class="flabel" for="psel">Тамирчин:</label><select id="psel">${opts.join('')}</select></div>` +
+    `<label class="chk"><input type="checkbox" id="hd" ${state.hideDone ? 'checked' : ''}> Дууссан тойргийг нуух</label>` +
+    (active ? `<button type="button" class="linkbtn" id="reset">Шүүлтүүр арилгах</button>` : '');
+  $('filters').querySelectorAll('.fchip').forEach(b => b.onclick = () => { state.sport = b.dataset.s; renderView(); });
+  $('psel').onchange = e => { state.player = e.target.value; renderView(); };
+  $('hd').onchange = e => { state.hideDone = e.target.checked; renderView(); };
+  const r = $('reset'); if(r) r.onclick = () => { state.sport = 'all'; state.player = ''; state.hideDone = false; renderView(); };
+}
+
+function renderPCard(d){
+  const p = state.player && d.st[state.player];
+  if(!p){ $('pcard').innerHTML = ''; return; }
+  const list = p.gender === 'Эмэгтэй' ? d.women : d.men, pos = list.find(x => x.code === p.code)?.pos, df = p.gw - p.gl;
+  $('pcard').innerHTML = `<div class="pcard"><span><b>${esc(p.name)}</b> · ${esc(teamName(d, p.team))}</span><span>Тоглосон: <b>${p.played}</b></span><span>Хожсон: <b>${p.wins}</b></span><span>Гейм зөрүү: <b>${df > 0 ? '+' : ''}${df}</b></span><span>${p.gender === 'Эмэгтэй' ? 'Эмэгтэйчүүдийн' : 'Эрэгтэйчүүдийн'} эрэмбэ: <b>${pos}</b></span></div>`;
+}
+
+function renderSchedule(d){
+  const mine = m => m && (m.aCode === state.player || m.bCode === state.player);
+  const vis = SPORTS.filter(s => state.sport === 'all' || state.sport === s.key);
+  const rows = d.rounds.map((r, i) => ({r, i}))
+    .filter(({r}) => !(state.hideDone && r.complete))
+    .filter(({r}) => !state.player || SPORTS.some((s, si) => vis.includes(s) && mine(r.matches[si])));
+  if(!rows.length){ $('schedule').innerHTML = '<div class="empty">Тохирох тоглолт алга. Шүүлтүүрээ өөрчилнө үү.</div>'; return; }
+  $('schedule').style.setProperty('--n', vis.length);
+  $('schedule').innerHTML =
+    `<div class="hdrrow"><span>Тойрог</span>${vis.map(s => `<span>${s.icon} ${esc(s.label)}</span>`).join('')}</div>` +
+    rows.map(({r, i}) => `<div class="round ${i === d.cur ? 'cur' : ''}">
+      <div class="rhead"><div class="rn">${r.n}-р тойрог</div>${i === d.cur ? '<span class="now">ОДОО</span>' : ''}${r.complete ? '<span class="chip done">✓ Дууссан</span>' : ''}</div>
+      ${SPORTS.map((s, si) => vis.includes(s) ? matchHTML(r.matches[si], state.player && !mine(r.matches[si])) : '').join('')}</div>`).join('');
+}
+
+function renderBoards(d){
+  const li = p => { const df = p.gw - p.gl; return `<li><span class="rk">${p.pos}</span><span class="who"><b>${esc(p.name)}</b><span>${esc(teamName(d, p.team))} · ${p.played} тоглолт</span></span><span class="w">${p.wins}</span><span class="d">${df > 0 ? '+' : ''}${df}</span></li>`; };
+  const box = (t, l) => `<div class="card"><div style="font-weight:800;margin-bottom:4px">${t}</div><div class="lbh"><span></span><span>Тамирчин</span><span title="Хожсон тоглолт">Хожсон</span><span title="Хожсон гейм − алдсан гейм">Зөрүү</span></div><ul class="lb">${l.map(li).join('')}</ul></div>`;
+  $('boards').innerHTML = box('♂ Эрэгтэй', d.men) + box('♀ Эмэгтэй', d.women);
+}
+
+function renderBanners(){
+  const b = [];
+  if(state.demo) b.push(`<div class="banner warn"><b>DEMO өгөгдөл харуулж байна.</b> Жинхэнэ дүнг харуулахын тулд файлын дээд талын <code>CONFIG.SHEET_ID</code>-д Google Sheets-ийн ID-г бичнэ.</div>`);
+  if(state.err) b.push(`<div class="banner err"><b>Google Sheets-ээс дүн татаж чадсангүй.</b> ${esc(state.err)}<br>Шалгах зүйл: (1) Sheets «Линктэй бүх хүн үзэх» (Viewer) эсэх, (2) SHEET_ID зөв эсэх, (3) табын нэрс таарч байгаа эсэх.${state.lastOk ? ' Одоо сүүлд амжилттай татсан дүнг харуулж байна.' : ''}</div>`);
+  if(state.data && state.data.errors) b.push(`<div class="banner err">Шүүгчийн хуудсанд алдаатай бүртгэл <b>${state.data.errors}</b> байна (хоёр тал зэрэг хожих хэмжээнд хүрсэн г.м). Шалгаж засна уу.</div>`);
+  $('banners').innerHTML = b.join('');
+}
+
+function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); }
+function renderAll(){
+  const d = state.data; if(!d) return;
+  renderHero(d); renderEvents(d); renderNow(d); renderView(); renderBoards(d); renderBanners();
+  const t = (state.lastOk || new Date()).toLocaleTimeString('mn-MN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  $('upd').textContent = state.demo ? 'DEMO' : state.err ? 'Холболт тасарсан · сүүлд ' + t : 'Шууд · шинэчлэгдсэн ' + t;
+  $('dot').classList.toggle('off', state.demo || !!state.err);
+}
+
+let busy = false;
+async function refresh(){
+  if(busy) return; busy = true;
+  $('refresh').disabled = true; $('tools').classList.add('loading');
+  try{
+    const raw = CONFIG.SHEET_ID ? await loadFromSheet() : demoRaw();
+    state.demo = !CONFIG.SHEET_ID; state.err = null; state.lastOk = new Date();
+    state.data = compute(raw);
+  }catch(e){
+    state.err = e.message || String(e);
+  }
+  busy = false; $('refresh').disabled = false; $('tools').classList.remove('loading');
+  if(!state.data){ renderBanners(); $('upd').textContent = 'Холбогдож чадсангүй'; $('dot').classList.add('off'); return; }
+  renderAll();
+}
+
+$('title').textContent = CONFIG.TITLE; document.title = CONFIG.TITLE + ' — Шууд дүн';
+$('refresh').onclick = refresh;
+$('theme').onclick = () => {
+  const r = document.documentElement, dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = (r.dataset.theme || (dark ? 'dark' : 'light')) === 'dark' ? 'light' : 'dark';
+};
+if(!document.fullscreenEnabled) $('fs').hidden = true;
+$('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+refresh();
+if(CONFIG.SHEET_ID) setInterval(refresh, Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
+</script>
+</body>
+</html>
