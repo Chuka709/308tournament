@@ -170,7 +170,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
   </section>
   <div class="how">
     <span>Хожсон тоглолт бүр <b>1 оноо</b></span>
-    <span>Эрэгтэй түрүүлж <b>3</b>, эмэгтэй түрүүлж <b>2</b> гейм хожно</span>
+    <span id="howT">Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно</span>
     <span>Нэг тойрогт гурван төрлийн тоглолт зэрэг явагдана</span>
   </div>
 
@@ -194,7 +194,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 <script>
 /* ============ ТОХИРГОО — зөвхөн энд засна ============ */
 const CONFIG = {
-  SHEET_ID: "179VXSagdRU_BAx4edHgdSEIEvdJDJRHk3H_rRJ3kU3o",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
+  SHEET_ID: "1Q9aSQbDjxFvpT2WWKt1FaXOoji0fx0ZSCIxb33u0TF8",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
   REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
   TITLE: "Багийн тэмцээн", // хуудасны гарчиг
   TABS: { roster: "Тамирчид", darts: "Дартс", tennis: "Теннис", pool: "Биллиард" } // Sheets доторх табын нэрс
@@ -227,11 +227,11 @@ const num = c => (c && c.v != null && c.v !== '') ? Number(c.v) : null;
 async function loadFromSheet(){
   const T = CONFIG.TABS;
   const [roster, ...sp] = await Promise.all([
-    gviz(T.roster, 'A3:E16'), gviz(T.darts, 'A5:L17'), gviz(T.tennis, 'A5:L17'), gviz(T.pool, 'A5:L17')
+    gviz(T.roster, 'A3:G47'), gviz(T.darts, 'A5:L204'), gviz(T.tennis, 'A5:L204'), gviz(T.pool, 'A5:L204')
   ]);
   const teamA = txt(roster[0]?.[1]) || 'А баг', teamB = txt(roster[1]?.[1]) || 'Б баг';
-  const players = roster.slice(4).filter(r => txt(r[0])).map(r => ({
-    code: txt(r[0]), team: txt(r[1]), gender: txt(r[2]), name: txt(r[3]) || txt(r[0])
+  const players = roster.slice(5).filter(r => txt(r[5])).map(r => ({
+    code: txt(r[5]), team: txt(r[0]), gender: txt(r[1]), name: txt(r[2]) || txt(r[5])
   }));
   const matches = [];
   SPORTS.forEach((s, i) => sp[i].forEach(r => {
@@ -242,7 +242,6 @@ async function loadFromSheet(){
       gender:txt(r[10]), target:num(r[11])
     });
   }));
-  if(!matches.length) throw new Error('Тоглолтын жагсаалт хоосон байна. Табын нэрс (CONFIG.TABS) Sheets-тэй таарч байгаа эсэхийг шалгана уу.');
   return {teamA, teamB, players, matches};
 }
 
@@ -270,39 +269,53 @@ function compute(raw){
     .sort((x,y) => y.wins - x.wins || (y.gw - y.gl) - (x.gw - x.gl) || x.code.localeCompare(y.code));
   const men = sorted('Эрэгтэй'), women = sorted('Эмэгтэй');
   [men, women].forEach(l => l.forEach((p, i) => p.pos = i + 1));
-  const rounds = [];
-  const nRounds = Math.max(0, ...raw.matches.map(m => m.round || 0));
-  for(let n = 1; n <= nRounds; n++){
+  const nums = [...new Set(raw.matches.map(m => m.round).filter(n => n != null))].sort((x, y) => x - y);
+  const rounds = nums.map(n => {
     const ms = SPORTS.map(s => raw.matches.find(m => m.sport === s.key && m.round === n) || null);
-    rounds.push({n, matches: ms, complete: ms.every(m => m && m.status === DONE)});
-  }
+    return {n, matches: ms, complete: ms.filter(Boolean).every(m => m.status === DONE)};
+  });
+  const tgt = g => (raw.matches.find(m => m.gender === g && m.target) || {}).target || null;
   const cur = rounds.findIndex(r => !r.complete);
-  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st};
+  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st, tM: tgt('Эрэгтэй'), tW: tgt('Эмэгтэй')};
 }
 
-/* ---------- DEMO өгөгдөл ---------- */
+/* ---------- Хуваарь үүсгэгч (Sheets-ийн томьёотой ижил зарчим; DEMO-д ашиглана) ---------- */
+function genSchedule(c){
+  const Nm = Math.max(c.nAm, c.nBm), Nw = Math.max(c.nAw, c.nBw);
+  const Qm = Math.ceil(Nm / 3), Qw = Math.ceil(Nw / 3), L = 3 * Math.max(Qm, Qw, 1);
+  const mod = (a, n) => ((a % n) + n) % n, cand = [];
+  [['Эрэгтэй', c.nAm, c.nBm, Nm, Qm, 0, 'M'], ['Эмэгтэй', c.nAw, c.nBw, Nw, Qw, 1, 'W']].forEach(([g, nA, nB, N, Q, gi, l]) => {
+    for(let i = 1; i <= nA; i++) for(let j = 1; j <= nB; j++){
+      const k = mod(j - i, N);
+      for(let s = 0; s < 3; s++) cand.push({gender:g, i, j, s, letter:l, key:(k * 2 + gi) * L + mod(s - i, 3) * Q + Math.floor((i - 1) / 3) + 1});
+    }
+  });
+  const keys = [...new Set(cand.map(x => x.key))].sort((a, b) => a - b);
+  cand.forEach(x => x.round = keys.indexOf(x.key) + 1);
+  return cand;
+}
+
+/* ---------- DEMO өгөгдөл (баг бүрийн тоо ялгаатай байж болохыг харуулна) ---------- */
 function demoRaw(){
-  const names = {A1:'Бат',A2:'Дорж',A3:'Ганаа',B1:'Тэмүүлэн',B2:'Эрдэнэ',B3:'Саруул',A4:'Оюна',A5:'Номин',B4:'Цэцэг',B5:'Болор'};
-  const players = Object.keys(names).map(c => ({code:c, team:c[0], gender:'45'.includes(c[1]) ? 'Эмэгтэй' : 'Эрэгтэй', name:names[c]}));
-  const sched = [
-   ['A4-B4','A2-B1','A3-B3'],['A2-B3','A1-B1','A3-B2'],['A2-B2','A5-B4','A3-B1'],['A1-B2','A5-B5','A4-B4'],
-   ['A3-B1','A1-B3','A5-B5'],['A3-B3','A2-B2','A1-B1'],['A4-B5','A3-B1','A2-B2'],['A5-B5','A1-B2','A2-B3'],
-   ['A1-B1','A3-B3','A4-B5'],['A2-B1','A3-B2','A5-B4'],['A1-B3','A4-B4','A2-B1'],['A5-B4','A2-B3','A1-B2'],['A3-B2','A4-B5','A1-B3']];
-  const matches = [];
-  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-  sched.forEach((r, ri) => r.forEach((pair, si) => {
-    const [a, b] = pair.split('-'); const woman = '45'.includes(a[1]); const target = woman ? 2 : 3;
-    const m = {sport:SPORTS[si].key, round:ri+1, aCode:a, bCode:b, aName:names[a], bName:names[b],
-      fa:null, fb:null, status:PEND, winTeam:'', winCode:'', gender:woman?'Эмэгтэй':'Эрэгтэй', target};
-    if(ri < 6){
+  const cfg = {nAm:4, nBm:3, nAw:2, nBw:3};
+  const nm = {AM:['Бат','Дорж','Ганаа','Хүрэл'], BM:['Тэмүүлэн','Эрдэнэ','Саруул'], AW:['Оюна','Номин'], BW:['Цэцэг','Болор','Сарнай']};
+  const players = [];
+  [['A','Эрэгтэй','M',nm.AM],['B','Эрэгтэй','M',nm.BM],['A','Эмэгтэй','W',nm.AW],['B','Эмэгтэй','W',nm.BW]].forEach(([t, g, l, list]) =>
+    list.forEach((n, i) => players.push({code:`${t}-${l}${i+1}`, team:t, gender:g, name:n})));
+  const name = c => players.find(p => p.code === c).name;
+  const sched = genSchedule(cfg).sort((a, b) => a.round - b.round || a.s - b.s);
+  const maxDone = 10; let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const matches = sched.map(x => {
+    const a = `A-${x.letter}${x.i}`, b = `B-${x.letter}${x.j}`, w = x.gender === 'Эмэгтэй', target = w ? 2 : 3;
+    const m = {sport:SPORTS[x.s].key, round:x.round, aCode:a, bCode:b, aName:name(a), bName:name(b), fa:null, fb:null,
+      status:PEND, winTeam:'', winCode:'', gender:x.gender, target};
+    if(x.round <= maxDone){
       const aWins = rnd() < .5, loser = Math.floor(rnd() * target);
       m.fa = aWins ? target : loser; m.fb = aWins ? loser : target; m.status = DONE;
       m.winTeam = aWins ? 'A' : 'B'; m.winCode = aWins ? a : b;
-    } else if(ri === 6){
-      if(si < 2){ m.fa = si === 0 ? 1 : 2; m.fb = 1; m.status = LIVE; }
-    }
-    matches.push(m);
-  }));
+    } else if(x.round === maxDone + 1){ m.fa = 1; m.fb = 1; m.status = LIVE; }
+    return m;
+  });
   return {teamA:'Ирвэс', teamB:'Бар', players, matches};
 }
 
@@ -350,11 +363,12 @@ function renderEvents(d){
 }
 
 function renderNow(d){
+  if(!d.rounds.length){ $('nowh').firstChild.textContent = 'Одоогийн тойрог '; $('now').innerHTML = `<div class="card empty">Хуваарь хараахан үүсээгүй байна.</div>`; return; }
   if(d.cur < 0){ $('nowh').firstChild.textContent = 'Тойргууд '; $('now').innerHTML = `<div class="card empty">Бүх тойрог дууссан.</div>`; return; }
   $('nowh').firstChild.textContent = `Одоогийн тойрог — ${d.rounds[d.cur].n}-р тойрог `;
   const nx = d.rounds[d.cur + 1];
-  $('now').innerHTML = `<div class="grid3">${d.rounds[d.cur].matches.map(m => matchHTML(m)).join('')}</div>` +
-    (nx ? `<div class="small" style="margin:18px 0 8px"><b>Дараагийн тойрог — ${nx.n}-р тойрог</b></div><div class="grid3">${nx.matches.map(m => matchHTML(m)).join('')}</div>` : '');
+  $('now').innerHTML = `<div class="grid3">${d.rounds[d.cur].matches.filter(Boolean).map(m => matchHTML(m)).join('')}</div>` +
+    (nx ? `<div class="small" style="margin:18px 0 8px"><b>Дараагийн тойрог — ${nx.n}-р тойрог</b></div><div class="grid3">${nx.matches.filter(Boolean).map(m => matchHTML(m)).join('')}</div>` : '');
 }
 
 function renderFilters(d){
@@ -383,6 +397,7 @@ function renderPCard(d){
 }
 
 function renderSchedule(d){
+  if(!d.rounds.length){ $('schedule').innerHTML = '<div class="empty">Хуваарь хараахан үүсээгүй байна. Тамирчдыг «Тамирчид» хуудсанд бүртгэнэ үү.</div>'; return; }
   const mine = m => m && (m.aCode === state.player || m.bCode === state.player);
   const vis = SPORTS.filter(s => state.sport === 'all' || state.sport === s.key);
   const rows = d.rounds.map((r, i) => ({r, i}))
@@ -399,34 +414,40 @@ function renderSchedule(d){
 
 function renderBoards(d){
   const li = p => { const df = p.gw - p.gl; return `<li><span class="rk">${p.pos}</span><span class="who"><b>${esc(p.name)}</b><span>${esc(teamName(d, p.team))} · ${p.played} тоглолт</span></span><span class="w">${p.wins}</span><span class="d">${df > 0 ? '+' : ''}${df}</span></li>`; };
-  const box = (t, l) => `<div class="card"><div style="font-weight:800;margin-bottom:4px">${t}</div><div class="lbh"><span></span><span>Тамирчин</span><span title="Хожсон тоглолт">Хожсон</span><span title="Хожсон гейм − алдсан гейм">Зөрүү</span></div><ul class="lb">${l.map(li).join('')}</ul></div>`;
+  const box = (t, l) => `<div class="card"><div style="font-weight:800;margin-bottom:4px">${t}</div><div class="lbh"><span></span><span>Тамирчин</span><span title="Хожсон тоглолт">Хожсон</span><span title="Хожсон гейм − алдсан гейм">Зөрүү</span></div>${l.length ? `<ul class="lb">${l.map(li).join('')}</ul>` : '<div class="empty">Тамирчин бүртгэгдээгүй</div>'}</div>`;
   $('boards').innerHTML = box('♂ Эрэгтэй', d.men) + box('♀ Эмэгтэй', d.women);
 }
 
 function renderBanners(){
   const b = [];
-  if(state.demo) b.push(`<div class="banner warn"><b>DEMO өгөгдөл харуулж байна.</b> Жинхэнэ дүнг харуулахын тулд файлын дээд талын <code>CONFIG.SHEET_ID</code>-д Google Sheets-ийн ID-г бичнэ.</div>`);
+  if(state.demo) b.push(`<div class="banner warn"><b>DEMO өгөгдөл харуулж байна.</b> ${CONFIG.SHEET_ID ? 'Жинхэнэ дүнг үзэхийн тулд хаягийн төгсгөлөөс <code>?demo</code>-г авна.' : 'Жинхэнэ дүнг харуулахын тулд файлын дээд талын <code>CONFIG.SHEET_ID</code>-д Google Sheets-ийн ID-г бичнэ.'}</div>`);
+  if(state.data && !state.data.players.length && !state.demo) b.push(`<div class="banner warn"><b>Тамирчид бүртгэгдээгүй байна.</b> «Тамирчид» хуудсанд баг, хүйс, нэрийг бөглөхөд хуваарь автоматаар гарна.</div>`);
   if(state.err) b.push(`<div class="banner err"><b>Google Sheets-ээс дүн татаж чадсангүй.</b> ${esc(state.err)}<br>Шалгах зүйл: (1) Sheets «Линктэй бүх хүн үзэх» (Viewer) эсэх, (2) SHEET_ID зөв эсэх, (3) табын нэрс таарч байгаа эсэх.${state.lastOk ? ' Одоо сүүлд амжилттай татсан дүнг харуулж байна.' : ''}</div>`);
   if(state.data && state.data.errors) b.push(`<div class="banner err">Шүүгчийн хуудсанд алдаатай бүртгэл <b>${state.data.errors}</b> байна (хоёр тал зэрэг хожих хэмжээнд хүрсэн г.м). Шалгаж засна уу.</div>`);
   $('banners').innerHTML = b.join('');
 }
 
 function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); }
+function renderHow(d){
+  const p = [d.tM && `эрэгтэй — түрүүлж <b>${d.tM}</b>`, d.tW && `эмэгтэй — түрүүлж <b>${d.tW}</b>`].filter(Boolean);
+  if(p.length) $('howT').innerHTML = p.join(', ').replace(/^./, c => c.toUpperCase()) + ' гейм хожно';
+}
 function renderAll(){
   const d = state.data; if(!d) return;
-  renderHero(d); renderEvents(d); renderNow(d); renderView(); renderBoards(d); renderBanners();
-  const t = (state.lastOk || new Date()).toLocaleTimeString('mn-MN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  renderHow(d); renderHero(d); renderEvents(d); renderNow(d); renderView(); renderBoards(d); renderBanners();
+  const t = (state.lastOk || new Date()).toLocaleTimeString('mn-MN', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
   $('upd').textContent = state.demo ? 'DEMO' : state.err ? 'Холболт тасарсан · сүүлд ' + t : 'Шууд · шинэчлэгдсэн ' + t;
   $('dot').classList.toggle('off', state.demo || !!state.err);
 }
 
+const useDemo = !CONFIG.SHEET_ID || /[?&]demo(=1|=true)?(&|$)/.test(location.search);
 let busy = false;
 async function refresh(){
   if(busy) return; busy = true;
   $('refresh').disabled = true; $('tools').classList.add('loading');
   try{
-    const raw = CONFIG.SHEET_ID ? await loadFromSheet() : demoRaw();
-    state.demo = !CONFIG.SHEET_ID; state.err = null; state.lastOk = new Date();
+    const raw = useDemo ? demoRaw() : await loadFromSheet();
+    state.demo = useDemo; state.err = null; state.lastOk = new Date();
     state.data = compute(raw);
   }catch(e){
     state.err = e.message || String(e);
@@ -445,7 +466,7 @@ $('theme').onclick = () => {
 if(!document.fullscreenEnabled) $('fs').hidden = true;
 $('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
 refresh();
-if(CONFIG.SHEET_ID) setInterval(refresh, Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
+if(!useDemo) setInterval(refresh, Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
 </script>
 </body>
 </html>
