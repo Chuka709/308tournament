@@ -144,6 +144,49 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 }
 :fullscreen body{overflow:auto}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.btn.pri{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.chipw{display:inline-flex;gap:8px;align-items:center;padding:4px 5px 4px 13px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-size:13px;box-shadow:var(--shadow)}
+.chipw .btn{box-shadow:none;padding:5px 11px}
+.overlay{position:fixed;inset:0;background:rgba(5,8,18,.6);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.overlay[hidden]{display:none}
+.sheet{position:relative;background:var(--surface);color:var(--text);width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:22px 18px 28px;box-shadow:var(--shadow)}
+@media (min-width:700px){.overlay{align-items:center;padding:20px}.sheet{border-radius:22px}}
+.sheet .x{position:absolute;top:10px;right:12px;border:0;background:var(--surface2);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px}
+.sheet h3{font-family:var(--display);font-size:16px;margin:0 40px 14px 0}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:12.5px;color:var(--muted);font-weight:700}
+.field input,.field select,.field textarea{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:15px;width:100%}
+.field textarea{min-height:130px;resize:vertical}
+.field textarea[disabled],.field input[disabled]{opacity:.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.msg{margin:10px 0;padding:10px 12px;border-radius:12px;font-size:13.5px;background:var(--surface2)}
+.msg.err{background:var(--bad-soft);border:1px solid var(--bad)}.msg.ok{background:var(--ok-soft)}
+.ed-head{font-size:13px;color:var(--muted);margin-bottom:12px}
+.ed{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border:1px solid var(--line);border-radius:18px;padding:14px;text-align:center;min-width:0}
+.side .tn{font-size:12.5px;font-weight:700}.side.a .tn{color:var(--a)}.side.b .tn{color:var(--b)}
+.side .pn{font-weight:800;font-size:17px;margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side .num{font-family:var(--display);font-weight:800;font-size:64px;line-height:1.1}
+.side.a .num{color:var(--a)}.side.b .num{color:var(--b)}
+.side.win{border-color:var(--ok);background:var(--ok-soft)}
+.side .btns{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.step{width:62px;height:62px;border-radius:18px;border:1px solid var(--line);background:var(--surface2);font-size:30px;font-weight:800;cursor:pointer}
+.step:active{transform:scale(.96)}.step[disabled]{opacity:.35;cursor:not-allowed}
+.ed-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:16px}
+.savest{font-size:13px;color:var(--muted)}.savest.ok{color:var(--ok)}.savest.err{color:var(--bad);font-weight:700}
+.match.editable{cursor:pointer;outline:1px dashed transparent}.match.editable:hover{outline-color:var(--muted)}
+.match.editable .mh::after{content:"✎";color:var(--muted)}
+.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:11px 16px;border-radius:14px;font-size:14px;z-index:60;max-width:90vw;box-shadow:var(--shadow)}
+.toast[hidden]{display:none}
+.list{list-style:none;margin:0 0 12px;padding:0}.list li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.logrow{font-size:12.5px;padding:7px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}.logrow b{font-weight:800}
+.hint{font-size:12.5px;color:var(--muted)}
+.danger-zone{margin-top:18px;padding:12px;border:1px dashed var(--bad);border-radius:14px}
+@media (max-width:420px){.step{width:54px;height:54px}.side .num{font-size:52px}}
 </style>
 </head>
 <body>
@@ -157,6 +200,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
       <span class="pill" role="status"><span class="dot off" id="dot"></span><span id="upd">Ачаалж байна…</span></span>
       <button class="btn" id="refresh" type="button"><span class="spin">↻</span> Шинэчлэх</button>
       <button class="btn" id="fs" type="button">⛶ Бүтэн дэлгэц</button>
+      <span id="who"></span><span class="pill" id="lockbadge" hidden>🔒 Хуваарь түгжигдсэн</span>
+      <button class="btn pri" id="login" type="button" hidden>🔒 Засах</button><button class="btn" id="adminbtn" type="button" hidden>⚙ Тохиргоо</button>
       <button class="btn" id="theme" type="button" aria-label="Харанхуй эсвэл цайвар горим сонгох">◐ Горим</button>
     </div>
   </header>
@@ -191,12 +236,16 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
   <footer>Эрэмбэ: хожсон тоглолтын тоо, тэнцвэл гейм зөрүүгээр (зөрүү = хожсон гейм − алдсан гейм). Дүн автоматаар шинэчлэгдэнэ.</footer>
 </div>
 
+<div class="overlay" id="modal" hidden><div class="sheet" role="dialog" aria-modal="true"><button class="x" id="mx" type="button" aria-label="Хаах">✕</button><div id="modalBody"></div></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
 <script>
 /* ============ ТОХИРГОО — зөвхөн энд засна ============ */
 const CONFIG = {
-  SHEET_ID: "1Q9aSQbDjxFvpT2WWKt1FaXOoji0fx0ZSCIxb33u0TF8",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
+  SHEET_ID: "1LRr04SV5zJUn3wNLlRwuHKYTOTJP2eFLh-tcinHboM8",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
   REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
   TITLE: "Багийн тэмцээн", // хуудасны гарчиг
+  API_URL: "",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
   TABS: { roster: "Тамирчид", darts: "Дартс", tennis: "Теннис", pool: "Биллиард" } // Sheets доторх табын нэрс
 };
 /* ======================================================= */
@@ -242,7 +291,7 @@ async function loadFromSheet(){
       gender:txt(r[10]), target:num(r[11])
     });
   }));
-  return {teamA, teamB, players, matches};
+  return {teamA, teamB, players, matches, locked: txt(roster[0]?.[6]).includes('ТҮГЖИГДСЭН'), tM: num(roster[0]?.[4]), tW: num(roster[1]?.[4])};
 }
 
 /* ---------- Тооцоолол ---------- */
@@ -276,7 +325,7 @@ function compute(raw){
   });
   const tgt = g => (raw.matches.find(m => m.gender === g && m.target) || {}).target || null;
   const cur = rounds.findIndex(r => !r.complete);
-  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st, tM: tgt('Эрэгтэй'), tW: tgt('Эмэгтэй')};
+  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st, tM: raw.tM ?? tgt('Эрэгтэй'), tW: raw.tW ?? tgt('Эмэгтэй'), scored: raw.matches.filter(m => m.fa != null || m.fb != null).length};
 }
 
 /* ---------- Хуваарь үүсгэгч (Sheets-ийн томьёотой ижил зарчим; DEMO-д ашиглана) ---------- */
@@ -319,6 +368,128 @@ function demoRaw(){
   return {teamA:'Ирвэс', teamB:'Бар', players, matches};
 }
 
+/* ---------- Тоглолтын төлөв (Sheets-ийн томьёотой ижил) ---------- */
+const mkey = m => `${m.sport}|${m.aCode}|${m.bCode}`;
+function derive(m){
+  const t = m.target || (m.gender === 'Эмэгтэй' ? 2 : 3), a = m.fa, b = m.fb;
+  m.winTeam = ''; m.winCode = '';
+  if(a == null && b == null){ m.status = PEND; return m; }
+  const A = a || 0, B = b || 0;
+  if(A > t || B > t || (A === t && B === t)) m.status = ERR;
+  else if(A === t){ m.status = DONE; m.winTeam = 'A'; m.winCode = m.aCode; }
+  else if(B === t){ m.status = DONE; m.winTeam = 'B'; m.winCode = m.bCode; }
+  else m.status = LIVE;
+  return m;
+}
+
+/* ---------- DEMO сервер (Apps Script-ийн ажиллагааг санах ойд дуурайна) ---------- */
+const DemoApi = {
+  db: null, tokens: {},
+  init(){
+    const raw = demoRaw();
+    this.db = {teamA:raw.teamA, teamB:raw.teamB, tM:3, tW:2, locked:false, players:raw.players.map(p => ({...p})),
+      matches:raw.matches.map(m => ({...m})), adminPin:'1234',
+      referees:[{id:'r1', name:'Шүүгч Болд', pin:'1111'}, {id:'r2', name:'Шүүгч Сарнай', pin:'2222'}], log:[]};
+  },
+  raw(){
+    if(!this.db) this.init();
+    const d = this.db;
+    return {teamA:d.teamA, teamB:d.teamB, players:d.players.map(p => ({...p})), matches:d.matches.map(m => ({...m})), locked:d.locked, tM:d.tM, tW:d.tW};
+  },
+  async call(a, p){ if(!this.db) this.init(); await new Promise(r => setTimeout(r, 120)); return this.handle(a, p); },
+  handle(a, p){
+    const d = this.db, ok = o => ({ok:true, ...o}), bad = (error, message, extra) => ({ok:false, error, message, ...extra});
+    if(a === 'ping') return ok({});
+    if(a === 'listReferees') return ok({referees:d.referees.map(r => ({id:r.id, name:r.name}))});
+    if(a === 'login'){
+      let role = null, name = null;
+      if(p.who === 'admin'){ if(p.pin === d.adminPin){ role = 'admin'; name = 'Админ'; } }
+      else { const r = d.referees.find(x => x.id === p.who); if(r && r.pin === p.pin){ role = 'referee'; name = r.name; } }
+      if(!role) return bad('BAD_PIN', 'PIN буруу байна.');
+      const token = 'demo-' + Math.random().toString(36).slice(2); this.tokens[token] = {role, name};
+      this.log(role, name, 'login', ''); return ok({token, role, name});
+    }
+    const sess = this.tokens[p.token];
+    if(!sess) return bad('AUTH', 'Нэвтрэх хугацаа дууссан байна. Дахин нэвтэрнэ үү.');
+    if(a === 'logout'){ delete this.tokens[p.token]; return ok({}); }
+    const scored = () => d.matches.filter(m => m.fa != null || m.fb != null).length;
+    if(a === 'saveScore' || a === 'clearScore'){
+      const m = d.matches.find(x => x.sport === p.sport && x.aCode === p.aCode && x.bCode === p.bCode);
+      if(!m) return bad('NOT_FOUND', 'Тоглолт олдсонгүй. Хуудсыг шинэчилнэ үү.');
+      if(p.prev && ((p.prev.fa ?? null) !== (m.fa ?? null) || (p.prev.fb ?? null) !== (m.fb ?? null))) return bad('CONFLICT', 'Энэ тоглолтын оноог өөр хүн өөрчилсөн байна.', {fa:m.fa ?? null, fb:m.fb ?? null});
+      let fa = null, fb = null; const t = m.target;
+      if(a === 'saveScore'){
+        fa = p.fa ?? null; fb = p.fb ?? null;
+        if((fa === null) !== (fb === null)) return bad('BAD_SCORE', 'Хоёр талын оноог хамт оруулна уу.');
+        if(fa !== null){
+          if(!Number.isInteger(fa) || !Number.isInteger(fb) || fa < 0 || fb < 0 || fa > t || fb > t) return bad('BAD_SCORE', `0-ээс ${t} хүртэлх бүхэл тоо оруулна уу.`);
+          if(fa === t && fb === t) return bad('BAD_SCORE', `Хоёр тал зэрэг ${t} хожиж болохгүй.`);
+        }
+      }
+      this.log(sess.role, sess.name, a, `${p.sport} ${p.aCode}–${p.bCode}: ${m.fa ?? '·'}:${m.fb ?? '·'} → ${fa ?? '·'}:${fb ?? '·'}`);
+      m.fa = fa; m.fb = fb; derive(m); return ok({fa, fb, target:t});
+    }
+    if(sess.role !== 'admin') return bad('FORBIDDEN', 'Энэ үйлдлийг зөвхөн админ хийнэ.');
+    if(a === 'saveSettings'){
+      const teamA = String(p.teamA || '').trim(), teamB = String(p.teamB || '').trim(), tm = +p.targetM, tw = +p.targetW;
+      if(!teamA || !teamB || teamA.length > 40 || teamB.length > 40) return bad('BAD_INPUT', 'Багийн нэр 1–40 тэмдэгт байх ёстой.');
+      if(teamA.toLowerCase() === teamB.toLowerCase()) return bad('BAD_INPUT', 'Хоёр багийн нэр ялгаатай байх ёстой.');
+      if(!Number.isInteger(tm) || !Number.isInteger(tw) || tm < 1 || tm > 9 || tw < 1 || tw > 9) return bad('BAD_INPUT', 'Хожих хэмжээ 1–9 хоорондын бүхэл тоо байх ёстой.');
+      if((tm !== d.tM || tw !== d.tW) && scored() > 0 && !p.force) return bad('TARGET_HAS_SCORES', 'Оноо оруулсан байхад хожих хэмжээг өөрчлөх нь тоглолтын төлөвийг өөрчилнө. Баталгаажуулж дахин илгээнэ үү.');
+      d.teamA = teamA; d.teamB = teamB; d.tM = tm; d.tW = tw;
+      d.matches.forEach(m => { m.target = m.gender === 'Эмэгтэй' ? tw : tm; derive(m); });
+      this.log(sess.role, sess.name, 'saveSettings', `${teamA} / ${teamB}, ${tm}/${tw}`); return ok({});
+    }
+    if(a === 'saveRoster'){
+      if(d.locked) return bad('ROSTER_LOCKED', 'Хуваарь түгжигдсэн байна. Эхлээд түгжээг нээнэ үү.');
+      if(scored() > 0) return bad('ROSTER_HAS_SCORES', 'Оноо оруулсан байна. Тамирчдыг өөрчлөхийн өмнө бүх оноог цэвэрлэнэ үү.');
+      const list = p.players || [], counts = {}, players = [];
+      if(list.length > 40) return bad('BAD_INPUT', 'Тамирчин хэт олон байна (дээд тал 40).');
+      for(let i = 0; i < list.length; i++){
+        const q = list[i], name = String(q.name || '').trim();
+        if(q.team !== 'A' && q.team !== 'B') return bad('BAD_INPUT', `${i + 1}-р тамирчины баг буруу.`);
+        if(q.gender !== 'Эрэгтэй' && q.gender !== 'Эмэгтэй') return bad('BAD_INPUT', `${i + 1}-р тамирчины хүйс буруу.`);
+        if(!name || name.length > 40) return bad('BAD_INPUT', `${i + 1}-р тамирчины нэр 1–40 тэмдэгт байх ёстой.`);
+        const k = q.team + q.gender; counts[k] = (counts[k] || 0) + 1;
+        if(counts[k] > 10) return bad('BAD_INPUT', 'Баг, хүйс бүрт дээд тал нь 10 тамирчин байж болно.');
+        players.push({code:`${q.team}-${q.gender === 'Эрэгтэй' ? 'M' : 'W'}${counts[k]}`, team:q.team, gender:q.gender, name});
+      }
+      const n = (t, g) => counts[t + g] || 0, nameOf = c => players.find(x => x.code === c).name;
+      const cands = genSchedule({nAm:n('A','Эрэгтэй'), nBm:n('B','Эрэгтэй'), nAw:n('A','Эмэгтэй'), nBw:n('B','Эмэгтэй')}).sort((x, y) => x.round - y.round || x.s - y.s);
+      d.players = players;
+      d.matches = cands.map(x => {
+        const ac = `A-${x.letter}${x.i}`, bc = `B-${x.letter}${x.j}`;
+        return derive({sport:SPORTS[x.s].key, round:x.round, aCode:ac, bCode:bc, aName:nameOf(ac), bName:nameOf(bc), fa:null, fb:null, gender:x.gender, target:x.gender === 'Эмэгтэй' ? d.tW : d.tM});
+      });
+      this.log(sess.role, sess.name, 'saveRoster', `${players.length} тамирчин`); return ok({count:players.length});
+    }
+    if(a === 'setLock'){
+      if(p.locked && !d.players.length) return bad('NO_PLAYERS', 'Тамирчин бүртгэгдээгүй байна.');
+      d.locked = !!p.locked; this.log(sess.role, sess.name, p.locked ? 'lock' : 'unlock', ''); return ok({locked:d.locked});
+    }
+    if(a === 'resetScores'){
+      if(p.confirm !== 'ЦЭВЭРЛЭХ') return bad('BAD_INPUT', 'Баталгаажуулах үг буруу байна.');
+      d.matches.forEach(m => { m.fa = null; m.fb = null; derive(m); }); this.log(sess.role, sess.name, 'resetScores', ''); return ok({});
+    }
+    if(a === 'addReferee'){
+      const name = String(p.name || '').trim();
+      if(!name || name.length > 30) return bad('BAD_INPUT', 'Шүүгчийн нэр 1–30 тэмдэгт байх ёстой.');
+      if(!/^[A-Za-z0-9]{4,12}$/.test(String(p.pin || ''))) return bad('BAD_INPUT', 'PIN нь 4–12 үсэг, тооноос бүрдэнэ.');
+      if(d.referees.some(r => r.name.toLowerCase() === name.toLowerCase())) return bad('BAD_INPUT', 'Ийм нэртэй шүүгч бүртгэгдсэн байна.');
+      d.referees.push({id:'r' + Date.now().toString(36), name, pin:String(p.pin)}); this.log(sess.role, sess.name, 'addReferee', name); return ok({});
+    }
+    if(a === 'removeReferee'){ d.referees = d.referees.filter(r => r.id !== p.id); this.log(sess.role, sess.name, 'removeReferee', p.id); return ok({}); }
+    if(a === 'resetRefereePin'){
+      const r = d.referees.find(x => x.id === p.id);
+      if(!r) return bad('NOT_FOUND', 'Шүүгч олдсонгүй.');
+      if(!/^[A-Za-z0-9]{4,12}$/.test(String(p.pin || ''))) return bad('BAD_INPUT', 'PIN нь 4–12 үсэг, тооноос бүрдэнэ.');
+      r.pin = String(p.pin); this.log(sess.role, sess.name, 'resetRefereePin', r.name); return ok({});
+    }
+    return bad('UNKNOWN', 'Үл мэдэгдэх үйлдэл: ' + a);
+  },
+  log(role, name, act, det){ this.db.log.push({t:new Date().toLocaleTimeString('mn-MN', {hour12:false}), role, name, act, det}); }
+};
+
 /*DOM*/
 const state = {sport:'all', player:'', hideDone:false, data:null, demo:false, lastOk:null, err:null, fkey:''};
 const $ = id => document.getElementById(id);
@@ -330,7 +501,7 @@ function matchHTML(m, ph){
   const sp = SPORTS.find(s => s.key === m.sport), g = m.gender === 'Эмэгтэй';
   const aw = m.status === DONE && m.winTeam === 'A', bw = m.status === DONE && m.winTeam === 'B';
   const sc = m.status === PEND ? 'vs' : `${m.fa ?? 0} : ${m.fb ?? 0}`;
-  return `<div class="match ${cls}">
+  return `<div class="match ${cls}${state.session ? ' editable' : ''}"${state.session ? ` data-key="${esc(mkey(m))}"` : ''}>
     <div class="mh"><span class="sport-lbl">${sp.icon} ${esc(sp.label)}</span><span class="gtag">${g ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</span><span>түрүүлж ${m.target || (g ? 2 : 3)}</span><span class="sp"></span><span class="chip ${cls}">${esc(m.status)}</span></div>
     <div class="mp"><span class="pl a ${aw ? 'win' : ''}">${aw ? '✓ ' : ''}${esc(m.aName)}</span><span class="sc">${sc}</span><span class="pl b ${bw ? 'win' : ''}">${bw ? '✓ ' : ''}${esc(m.bName)}</span></div></div>`;
 }
@@ -441,22 +612,272 @@ function renderAll(){
 }
 
 const useDemo = !CONFIG.SHEET_ID || /[?&]demo(=1|=true)?(&|$)/.test(location.search);
+const canEdit = useDemo || !!CONFIG.API_URL;
+Object.assign(state, {raw:null, session:null, pending:new Map(), timers:{}, inflight:new Set(), again:new Set(), modal:null, editKey:null, admin:null});
+if(!useDemo){ try{ state.session = JSON.parse(sessionStorage.getItem('tsess') || 'null'); }catch(e){} }
+
+/* ---------- API ---------- */
+const Api = {
+  async call(action, payload = {}){
+    if(useDemo) return DemoApi.call(action, {token:state.session && state.session.token, ...payload});
+    const res = await fetch(CONFIG.API_URL, {method:'POST', body:JSON.stringify({action, token:state.session && state.session.token, ...payload})});
+    return await res.json();
+  }
+};
+let toastT = null;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3800); }
+function openModal(name){ state.modal = name; $('modal').hidden = false; document.body.style.overflow = 'hidden'; }
+function closeModal(){
+  const was = state.modal; state.modal = null; $('modal').hidden = true; $('modalBody').innerHTML = ''; document.body.style.overflow = ''; state.editKey = null;
+  if(was) refresh();
+}
+const findMatch = key => state.raw && state.raw.matches.find(m => mkey(m) === key);
+
+/* ---------- Төлөв нөхөх (оптимист шинэчлэл) ---------- */
+function applyPending(raw){
+  const now = Date.now();
+  state.pending.forEach((p, key) => {
+    const m = raw.matches.find(x => mkey(x) === key);
+    if(!m || now > p.until){ state.pending.delete(key); return; }
+    if((m.fa ?? null) === (p.fa ?? null) && (m.fb ?? null) === (p.fb ?? null)){ state.pending.delete(key); return; }
+    if(p.srv) m.srv = p.srv;
+    m.fa = p.fa; m.fb = p.fb; derive(m);
+  });
+}
+
 let busy = false;
 async function refresh(){
   if(busy) return; busy = true;
   $('refresh').disabled = true; $('tools').classList.add('loading');
   try{
-    const raw = useDemo ? demoRaw() : await loadFromSheet();
-    state.demo = useDemo; state.err = null; state.lastOk = new Date();
-    state.data = compute(raw);
+    const raw = useDemo ? DemoApi.raw() : await loadFromSheet();
+    raw.matches.forEach(m => m.srv = {fa:m.fa, fb:m.fb});
+    applyPending(raw);
+    state.demo = useDemo; state.err = null; state.lastOk = new Date(); state.raw = raw; state.data = compute(raw);
   }catch(e){
     state.err = e.message || String(e);
   }
   busy = false; $('refresh').disabled = false; $('tools').classList.remove('loading');
   if(!state.data){ renderBanners(); $('upd').textContent = 'Холбогдож чадсангүй'; $('dot').classList.add('off'); return; }
-  renderAll();
+  renderAll(); renderSession();
+  if(state.modal === 'edit') renderEditor();
 }
 
+/* ---------- Нэвтрэлт ---------- */
+function renderSession(){
+  const s = state.session, d = state.data;
+  $('login').hidden = !canEdit || !!s;
+  $('adminbtn').hidden = !(s && s.role === 'admin');
+  $('who').innerHTML = s ? `<span class="chipw">👤 ${esc(s.name)} · ${s.role === 'admin' ? 'админ' : 'шүүгч'} <button class="btn" id="logout" type="button">Гарах</button></span>` : '';
+  $('lockbadge').hidden = !(d && d.locked);
+}
+async function openLogin(){
+  let refs = [];
+  try{ const r = await Api.call('listReferees'); if(r.ok) refs = r.referees; }catch(e){ toast('Серверт холбогдож чадсангүй.'); }
+  $('modalBody').innerHTML = `<h3>🔒 Нэвтрэх</h3>
+    <div class="field"><label for="lw">Та хэн бэ?</label><select id="lw">${refs.map(r => `<option value="${esc(r.id)}">${esc(r.name)} (шүүгч)</option>`).join('')}<option value="admin">Админ</option></select></div>
+    <div class="field"><label for="lp">PIN</label><input id="lp" type="password" inputmode="text" autocomplete="off" placeholder="PIN-ээ оруулна уу"></div>
+    <div id="lerr"></div>
+    <button class="btn pri" id="lgo" type="button">Нэвтрэх</button>
+    ${useDemo ? '<p class="hint">DEMO: Админ PIN <b>1234</b> · шүүгч PIN <b>1111</b> эсвэл <b>2222</b></p>' : ''}`;
+  openModal('login'); setTimeout(() => $('lp') && $('lp').focus(), 50);
+}
+async function doLogin(){
+  const who = $('lw').value, pin = $('lp').value; $('lgo').disabled = true;
+  try{
+    const r = await Api.call('login', {who, pin});
+    if(r.ok){
+      state.session = {token:r.token, role:r.role, name:r.name};
+      if(!useDemo) sessionStorage.setItem('tsess', JSON.stringify(state.session));
+      closeModal(); toast(`Тавтай морил, ${r.name}`);
+    } else { $('lerr').innerHTML = `<div class="msg err">${esc(r.message || 'Алдаа гарлаа')}</div>`; $('lgo').disabled = false; }
+  }catch(e){ $('lerr').innerHTML = '<div class="msg err">Серверт холбогдож чадсангүй.</div>'; $('lgo').disabled = false; }
+}
+async function doLogout(){
+  try{ await Api.call('logout'); }catch(e){}
+  state.session = null; sessionStorage.removeItem('tsess'); renderSession(); renderAll(); toast('Гарлаа');
+}
+function handleApiError(r, key){
+  if(r.error === 'AUTH'){ state.session = null; sessionStorage.removeItem('tsess'); renderSession(); renderAll(); closeModal(); openLogin(); toast('Нэвтрэх хугацаа дууссан. Дахин нэвтэрнэ үү.'); return; }
+  if(r.error === 'CONFLICT' && key){ state.pending.delete(key); toast('Энэ тоглолтын оноог өөр шүүгч өөрчилсөн байна. Шинэчилж байна…'); refresh(); return; }
+  toast(r.message || 'Алдаа гарлаа');
+}
+
+/* ---------- Оноо оруулах (шүүгч) ---------- */
+function setSaveState(kind, text){
+  const el = $('savest'); if(!el) return;
+  el.className = 'savest ' + (kind === 'ok' ? 'ok' : kind === 'err' ? 'err' : '');
+  el.textContent = kind === 'saving' ? 'Хадгалж байна…' : kind === 'ok' ? '✓ Хадгалагдсан' : (text || 'Алдаа');
+}
+function openEditor(key){ state.editKey = key; openModal('edit'); renderEditor(); }
+function renderEditor(){
+  const m = findMatch(state.editKey); if(!m){ closeModal(); return; }
+  const d = state.data, sp = SPORTS.find(s => s.key === m.sport), t = m.target || (m.gender === 'Эмэгтэй' ? 2 : 3);
+  const A = m.fa ?? 0, B = m.fb ?? 0, done = m.status === DONE;
+  const plus = (v, o) => v < t && !(v + 1 === t && o === t);
+  const side = (cls, team, name, v, o, who) => `<div class="side ${cls} ${done && ((cls === 'a' && m.winTeam === 'A') || (cls === 'b' && m.winTeam === 'B')) ? 'win' : ''}">
+      <div class="tn">${esc(team)}</div><div class="pn">${esc(name)}</div><div class="num">${v}</div>
+      <div class="btns"><button class="step" data-s="${who}" data-d="-1" ${v <= 0 ? 'disabled' : ''} aria-label="${esc(name)} −1">−</button><button class="step" data-s="${who}" data-d="1" ${plus(v, o) ? '' : 'disabled'} aria-label="${esc(name)} +1">+</button></div></div>`;
+  $('modalBody').innerHTML = `<h3>${sp.icon} ${esc(sp.label)} · ${m.gender === 'Эмэгтэй' ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</h3>
+    <div class="ed-head">Түрүүлж <b>${t}</b> хожсон нь хожно · <span class="chip ${done ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : ''}">${esc(m.status)}</span>${done ? ` · 🏆 <b>${esc(m.winCode === m.aCode ? m.aName : m.bName)}</b> хожлоо` : ''}</div>
+    <div class="ed">${side('a', teamName(d, 'A'), m.aName, A, B, 'a')}${side('b', teamName(d, 'B'), m.bName, B, A, 'b')}</div>
+    <div class="ed-foot"><span class="savest" id="savest"></span><span><button class="btn" id="edclear" type="button">Цэвэрлэх</button> <button class="btn pri" id="eddone" type="button">Болсон</button></span></div>`;
+  if(state.inflight.has(state.editKey) || state.timers[state.editKey]) setSaveState('saving');
+}
+function setLocalScore(key, fa, fb){
+  const m = findMatch(key); if(!m) return;
+  m.fa = fa; m.fb = fb; derive(m);
+  const prevP = state.pending.get(key);
+  state.pending.set(key, {fa, fb, until:Date.now() + 20000, srv:prevP && prevP.srv});
+  state.data = compute(state.raw); renderAll(); renderSession(); renderEditor();
+  clearTimeout(state.timers[key]); state.timers[key] = setTimeout(() => { delete state.timers[key]; doSave(key); }, 400);
+  setSaveState('saving');
+}
+function adjust(who, delta){
+  const m = findMatch(state.editKey); if(!m) return;
+  let a = m.fa ?? 0, b = m.fb ?? 0;
+  if(who === 'a') a = Math.max(0, a + delta); else b = Math.max(0, b + delta);
+  setLocalScore(state.editKey, a, b);
+}
+async function doSave(key){
+  if(state.inflight.has(key)){ state.again.add(key); return; }
+  const m = findMatch(key); if(!m) return;
+  state.inflight.add(key);
+  const fa = m.fa, fb = m.fb, prev = m.srv || {fa:null, fb:null}, clear = fa == null && fb == null;
+  let failed = false;
+  try{
+    const r = await Api.call(clear ? 'clearScore' : 'saveScore', {sport:m.sport, aCode:m.aCode, bCode:m.bCode, fa, fb, prev});
+    if(r.ok){
+      const cur = findMatch(key); if(cur) cur.srv = {fa, fb};
+      const p = state.pending.get(key); if(p) p.srv = {fa, fb};
+      if(state.modal === 'edit' && state.editKey === key && !state.timers[key]) setSaveState('ok');
+    } else { failed = true; setSaveState('err', r.message); handleApiError(r, key); }
+  }catch(e){ failed = true; setSaveState('err', 'Холболтын алдаа — дахин оролдоно уу'); toast('Холболтын алдаа. Оноо хадгалагдаагүй байж магадгүй.'); }
+  state.inflight.delete(key);
+  if(!failed && state.again.delete(key)) doSave(key); else state.again.delete(key);
+}
+
+/* ---------- Админ ---------- */
+const GROUPS = [['AM','A','Эрэгтэй'], ['BM','B','Эрэгтэй'], ['AW','A','Эмэгтэй'], ['BW','B','Эмэгтэй']];
+const lines = t => (t || '').split('\n').map(x => x.trim()).filter(Boolean);
+function openAdmin(){
+  const d = state.data, text = {AM:[], BM:[], AW:[], BW:[]};
+  d.players.forEach(p => { const k = p.team + (p.gender === 'Эрэгтэй' ? 'M' : 'W'); if(text[k]) text[k].push(p.name); });
+  Object.keys(text).forEach(k => text[k] = text[k].join('\n'));
+  state.admin = {tab:'main', text, form:{teamA:d.teamA, teamB:d.teamB, tM:d.tM ?? 3, tW:d.tW ?? 2}, refs:null, log:null, msg:null};
+  openModal('admin'); renderAdmin();
+}
+function adminMsg(type, text){ state.admin.msg = {type, text}; renderAdmin(); }
+async function renderAdmin(){
+  const A = state.admin, d = state.data; if(!A) return;
+  const tabs = [['main','Үндсэн'],['roster','Тамирчид'],['refs','Шүүгчид'],['log','Лог']];
+  let body = '';
+  if(A.tab === 'main'){
+    body = `<div class="row2"><div class="field"><label for="fa">А багийн нэр</label><input id="fa" value="${esc(A.form.teamA)}" maxlength="40"></div><div class="field"><label for="fb">Б багийн нэр</label><input id="fb" value="${esc(A.form.teamB)}" maxlength="40"></div></div>
+      <div class="row2"><div class="field"><label for="tm">Эрэгтэй: түрүүлж хожих</label><input id="tm" type="number" min="1" max="9" value="${esc(A.form.tM)}"></div><div class="field"><label for="tw">Эмэгтэй: түрүүлж хожих</label><input id="tw" type="number" min="1" max="9" value="${esc(A.form.tW)}"></div></div>
+      ${d.scored ? '<p class="hint">⚠ Оноо оруулсан байна. Хожих хэмжээг өөрчилбөл тоглолтын төлөв өөрчлөгдөнө.</p>' : ''}
+      <button class="btn pri" data-act="saveSettings" type="button">Хадгалах</button>
+      <div class="danger-zone"><b>Хуваарь ба оноо</b>
+        <p class="hint">${d.locked ? '🔒 Хуваарь түгжигдсэн: тамирчин нэмэх, хасах боломжгүй.' : '🔓 Хуваарь нээлттэй. Сугалааны дараа түгжиж баталгаажуулна.'}</p>
+        <button class="btn" data-act="toggleLock" type="button">${d.locked ? '🔓 Түгжээ нээх' : '🔒 Хуваарь батлах (түгжих)'}</button>
+        <div class="field" style="margin-top:12px"><label for="rs">Бүх оноог цэвэрлэх (буцаахгүй) — «ЦЭВЭРЛЭХ» гэж бичнэ</label><input id="rs" autocomplete="off"></div>
+        <button class="btn danger" data-act="resetScores" type="button">Бүх оноог цэвэрлэх</button></div>`;
+  } else if(A.tab === 'roster'){
+    const off = d.locked || d.scored > 0;
+    const n = k => lines(A.text[k]).length;
+    body = `${off ? `<div class="msg err">${d.locked ? '🔒 Хуваарь түгжигдсэн тул тамирчдыг өөрчлөх боломжгүй. «Үндсэн» таб дээрээс түгжээг нээнэ үү.' : 'Оноо оруулсан тул тамирчдыг өөрчлөх боломжгүй. Эхлээд «Үндсэн» таб дээрээс бүх оноог цэвэрлэнэ үү.'}</div>` : '<p class="hint">Мөр бүрт нэг нэр. Бичсэн дараалал нь дугаарлалт болно, «Сугалах» товч дарааллыг санамсаргүй холино. Баг, хүйс бүрт дээд тал нь 10.</p>'}
+      <div class="row2">${GROUPS.map(([k, t, g]) => `<div class="field"><label for="g${k}">${esc(teamName(d, t))} — ${g === 'Эрэгтэй' ? '♂ эрэгтэй' : '♀ эмэгтэй'} (<span id="n${k}">${n(k)}</span>)</label><textarea id="g${k}" data-g="${k}" ${off ? 'disabled' : ''}>${esc(A.text[k])}</textarea></div>`).join('')}</div>
+      <p class="hint" id="est"></p>
+      <button class="btn" data-act="shuffle" type="button" ${off ? 'disabled' : ''}>🎲 Сугалах (холих)</button> <button class="btn pri" data-act="saveRoster" type="button" ${off ? 'disabled' : ''}>Хадгалах</button>`;
+  } else if(A.tab === 'refs'){
+    if(!A.refs){ body = '<p class="hint">Ачаалж байна…</p>'; Api.call('listReferees').then(r => { A.refs = r.ok ? r.referees : []; renderAdmin(); }).catch(() => { A.refs = []; renderAdmin(); }); }
+    else body = `<ul class="list">${A.refs.length ? A.refs.map(r => `<li><span>👤 <b>${esc(r.name)}</b></span><span><button class="btn" data-act="refPin" data-id="${esc(r.id)}" type="button">PIN солих</button> <button class="btn danger" data-act="refDel" data-id="${esc(r.id)}" data-name="${esc(r.name)}" type="button">Устгах</button></span></li>`).join('') : '<li class="hint">Шүүгч бүртгэгдээгүй байна.</li>'}</ul>
+      <div class="row2"><div class="field"><label for="rn">Шүүгчийн нэр</label><input id="rn" maxlength="30"></div><div class="field"><label for="rp">PIN (4–12 үсэг, тоо)</label><input id="rp" maxlength="12" autocomplete="off"></div></div>
+      <button class="btn pri" data-act="refAdd" type="button">Шүүгч нэмэх</button>
+      <p class="hint">Шүүгч бүр өөрийн нэр, PIN-ээр нэвтэрнэ. Лог хуудсанд хэн оноог оруулсан нь бичигдэнэ.</p>`;
+  } else {
+    if(!A.log){ body = '<p class="hint">Ачаалж байна…</p>'; loadLog().then(l => { A.log = l; renderAdmin(); }).catch(() => { A.log = []; renderAdmin(); }); }
+    else body = A.log.length ? A.log.map(r => `<div class="logrow"><b>${esc(r.t)}</b> · ${esc(r.name)} (${esc(r.role)}) · <b>${esc(r.act)}</b> ${esc(r.det)}</div>`).join('') : '<p class="hint">Лог хоосон байна.</p>';
+  }
+  $('modalBody').innerHTML = `<h3>⚙ Тохиргоо (админ)</h3><div class="tabs">${tabs.map(([k, l]) => `<button class="fchip ${A.tab === k ? 'on' : ''}" data-act="tab" data-tab="${k}" type="button">${l}</button>`).join('')}</div>${A.msg ? `<div class="msg ${A.msg.type}">${esc(A.msg.text)}</div>` : ''}${body}`;
+  if(A.tab === 'roster') updateEst();
+}
+function updateEst(){
+  const A = state.admin, n = k => lines(A.text[k]).length, el = $('est'); if(!el) return;
+  GROUPS.forEach(([k]) => { const e = $('n' + k); if(e) e.textContent = n(k); });
+  const per = n('AM') * n('BM') + n('AW') * n('BW');
+  el.textContent = `Төрөл бүрт ${per} тоглолт, нийт ${per * 3} тоглолт болно.`;
+}
+async function loadLog(){
+  if(useDemo) return DemoApi.db.log.slice(-60).reverse();
+  const rows = await gviz('Лог', 'A2:E500');
+  return rows.filter(r => txt(r[0])).slice(-60).reverse().map(r => ({t:txt(r[0]), role:txt(r[1]), name:txt(r[2]), act:txt(r[3]), det:txt(r[4])}));
+}
+function shuffleArr(a){ for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+async function adminAct(act, el){
+  const A = state.admin, d = state.data;
+  const call = async (action, payload, okMsg, after) => {
+    try{
+      const r = await Api.call(action, payload);
+      if(r.ok){ if(after) await after(r); A.msg = {type:'ok', text:okMsg}; await refresh(); renderAdmin(); if(!useDemo) setTimeout(refresh, 2500); }
+      else if(r.error === 'AUTH') handleApiError(r);
+      else return r;
+    }catch(e){ adminMsg('err', 'Серверт холбогдож чадсангүй.'); }
+    return null;
+  };
+  if(act === 'tab'){ A.tab = el.dataset.tab; A.msg = null; if(A.tab === 'refs') A.refs = null; if(A.tab === 'log') A.log = null; return renderAdmin(); }
+  if(act === 'saveSettings'){
+    A.form = {teamA:$('fa').value, teamB:$('fb').value, tM:$('tm').value, tW:$('tw').value};
+    const pl = {teamA:A.form.teamA, teamB:A.form.teamB, targetM:+A.form.tM, targetW:+A.form.tW};
+    let r = await call('saveSettings', pl, 'Хадгалагдлаа.');
+    if(r && r.error === 'TARGET_HAS_SCORES'){
+      if(confirm(r.message + '\n\nҮргэлжлүүлэх үү?')) await call('saveSettings', {...pl, force:true}, 'Хадгалагдлаа.');
+    } else if(r) adminMsg('err', r.message);
+    return;
+  }
+  if(act === 'toggleLock'){ const r = await call('setLock', {locked:!d.locked}, d.locked ? 'Түгжээ нээгдлээ.' : 'Хуваарь түгжигдлээ.'); if(r) adminMsg('err', r.message); return; }
+  if(act === 'resetScores'){
+    if(!confirm('Бүх оноо устна. Үнэхээр цэвэрлэх үү?')) return;
+    const r = await call('resetScores', {confirm:$('rs').value.trim()}, 'Бүх оноо цэвэрлэгдлээ.'); if(r) adminMsg('err', r.message); return;
+  }
+  if(act === 'shuffle'){ GROUPS.forEach(([k]) => A.text[k] = shuffleArr(lines(A.text[k])).join('\n')); A.msg = {type:'ok', text:'Дараалал санамсаргүй холигдлоо. Хадгалахаа бүү мартаарай.'}; return renderAdmin(); }
+  if(act === 'saveRoster'){
+    const players = []; let dup = null;
+    GROUPS.forEach(([k, t, g]) => { const ls = lines(A.text[k]); if(new Set(ls.map(x => x.toLowerCase())).size !== ls.length) dup = k; ls.forEach(name => players.push({team:t, gender:g, name})); });
+    if(dup && !confirm('Нэг жагсаалтад ижил нэр давхардсан байна. Үргэлжлүүлэх үү?')) return;
+    const r = await call('saveRoster', {players}, `${players.length} тамирчин хадгалагдлаа. Хуваарь шинэчлэгдлээ.`); if(r) adminMsg('err', r.message); return;
+  }
+  if(act === 'refAdd'){ const r = await call('addReferee', {name:$('rn').value, pin:$('rp').value}, 'Шүүгч нэмэгдлээ.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refPin'){ const pin = prompt('Шинэ PIN (4–12 үсэг, тоо):'); if(!pin) return; const r = await call('resetRefereePin', {id:el.dataset.id, pin}, 'PIN солигдлоо.'); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refDel'){ if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const r = await call('removeReferee', {id:el.dataset.id}, 'Шүүгч устгагдлаа.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
+}
+
+/* ---------- Үйл явдлууд ---------- */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if(t.id === 'logout'){ doLogout(); return; }
+  if(t.id === 'mx'){ closeModal(); return; }
+  if(t === $('modal')){ closeModal(); return; }
+  if(state.modal === 'edit'){
+    const st = t.closest('.step'); if(st && !st.disabled){ adjust(st.dataset.s, +st.dataset.d); return; }
+    if(t.id === 'edclear'){ setLocalScore(state.editKey, null, null); return; }
+    if(t.id === 'eddone'){ closeModal(); return; }
+    return;
+  }
+  if(state.modal === 'login'){ if(t.id === 'lgo') doLogin(); return; }
+  if(state.modal === 'admin'){ const b = t.closest('[data-act]'); if(b && !b.disabled) adminAct(b.dataset.act, b); return; }
+  const card = t.closest && t.closest('.match[data-key]');
+  if(card && state.session && !state.modal) openEditor(card.dataset.key);
+});
+document.addEventListener('input', e => {
+  if(state.modal === 'admin' && e.target.dataset && e.target.dataset.g){ state.admin.text[e.target.dataset.g] = e.target.value; updateEst(); }
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && state.modal) closeModal();
+  if(e.key === 'Enter' && state.modal === 'login' && e.target.id === 'lp') doLogin();
+});
+$('login').onclick = openLogin;
+$('adminbtn').onclick = openAdmin;
 $('title').textContent = CONFIG.TITLE; document.title = CONFIG.TITLE + ' — Шууд дүн';
 $('refresh').onclick = refresh;
 $('theme').onclick = () => {
@@ -465,8 +886,11 @@ $('theme').onclick = () => {
 };
 if(!document.fullscreenEnabled) $('fs').hidden = true;
 $('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+function loop(){
+  setTimeout(async () => { if(!document.hidden && !state.modal) await refresh(); loop(); }, state.session ? 8000 : Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
+}
 refresh();
-if(!useDemo) setInterval(refresh, Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
+if(!useDemo) loop();
 </script>
 </body>
 </html>
