@@ -178,6 +178,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 .step:active{transform:scale(.96)}.step[disabled]{opacity:.35;cursor:not-allowed}
 .ed-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:16px}
 .savest{font-size:13px;color:var(--muted)}.savest.ok{color:var(--ok)}.savest.err{color:var(--bad);font-weight:700}
+.fgroup input[type=search]{padding:7px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:13.5px;width:210px;max-width:100%}
+mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2px;outline:1px solid var(--live)}
 .own{font-size:12px;color:var(--muted);font-weight:600}
 .match.readonly{cursor:not-allowed}
 .match.readonly .mh::after{content:"🔒";font-size:11px}
@@ -231,6 +233,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 
   <h2>Тоглолтын хуваарь <span class="line"></span></h2>
   <div class="filters" id="filters"></div>
+  <div class="hint" id="sres" aria-live="polite" style="margin:-2px 0 10px"></div>
   <div id="pcard"></div>
   <div class="card" id="schedule"></div>
 
@@ -512,7 +515,7 @@ const DemoApi = {
 };
 
 /*DOM*/
-const state = {sport:'all', player:'', hideDone:false, data:null, demo:false, lastOk:null, err:null, fkey:''};
+const state = {q:'', sport:'all', player:'', hideDone:false, data:null, demo:false, lastOk:null, err:null, fkey:''};
 const $ = id => document.getElementById(id);
 const teamName = (d, t) => t === 'A' ? d.teamA : d.teamB;
 
@@ -520,7 +523,12 @@ function canEditMatch(m){
   const s = state.session; if(!s || !m) return false;
   return s.role === 'admin' || !m.ownerId || m.ownerId === s.id;
 }
-function matchHTML(m, ph){
+function hl(name, q){
+  const n = String(name ?? ''); if(!q) return esc(n);
+  const i = n.toLowerCase().indexOf(q); if(i < 0) return esc(n);
+  return esc(n.slice(0, i)) + '<mark>' + esc(n.slice(i, i + q.length)) + '</mark>' + esc(n.slice(i + q.length));
+}
+function matchHTML(m, ph, q){
   if(!m || ph) return `<div class="match ph" aria-hidden="true">—</div>`;
   const cls = m.status === DONE ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : 'pend';
   const sp = SPORTS.find(s => s.key === m.sport), g = m.gender === 'Эмэгтэй';
@@ -529,7 +537,7 @@ function matchHTML(m, ph){
   const ce = canEditMatch(m), ro = state.session && !ce;
   return `<div class="match ${cls}${ce ? ' editable' : ''}${ro ? ' readonly' : ''}"${ce ? ` data-key="${esc(mkey(m))}"` : ''}${ro ? ` data-owner="${esc(m.ownerName || '')}"` : ''}>
     <div class="mh"><span class="sport-lbl">${sp.icon} ${esc(sp.label)}</span><span class="gtag">${g ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</span><span>түрүүлж ${m.target || (g ? 2 : 3)}</span>${m.ownerName ? `<span class="own">👤 ${esc(m.ownerName)}</span>` : ''}<span class="sp"></span><span class="chip ${cls}">${esc(m.status)}</span></div>
-    <div class="mp"><span class="pl a ${aw ? 'win' : ''}">${aw ? '✓ ' : ''}${esc(m.aName)}</span><span class="sc">${sc}</span><span class="pl b ${bw ? 'win' : ''}">${bw ? '✓ ' : ''}${esc(m.bName)}</span></div></div>`;
+    <div class="mp"><span class="pl a ${aw ? 'win' : ''}">${aw ? '✓ ' : ''}${hl(m.aName, q)}</span><span class="sc">${sc}</span><span class="pl b ${bw ? 'win' : ''}">${bw ? '✓ ' : ''}${hl(m.bName, q)}</span></div></div>`;
 }
 
 function renderHero(d){
@@ -574,20 +582,24 @@ function renderFilters(d){
   const f = [{k:'all', l:'Бүгд'}, ...SPORTS.map(s => ({k:s.key, l:s.icon + ' ' + s.label}))];
   const opts = ['<option value="">Бүгд</option>'].concat(
     d.players.map(p => `<option value="${esc(p.code)}" ${state.player === p.code ? 'selected' : ''}>${esc(p.name)} (${esc(teamName(d, p.team))})</option>`));
-  const active = state.sport !== 'all' || state.player || state.hideDone;
   $('filters').innerHTML =
+    `<div class="fgroup"><label class="flabel" for="q">🔍 Хайх:</label><input id="q" type="search" placeholder="Тамирчны нэр…" value="${esc(state.q)}" autocomplete="off" enterkeyhint="search"></div>` +
     `<div class="fgroup"><span class="flabel">Төрөл:</span>${f.map(x => `<button type="button" class="fchip ${state.sport === x.k ? 'on' : ''}" data-s="${x.k}" aria-pressed="${state.sport === x.k}">${esc(x.l)}</button>`).join('')}</div>` +
     `<div class="fgroup"><label class="flabel" for="psel">Тамирчин:</label><select id="psel">${opts.join('')}</select></div>` +
     `<label class="chk"><input type="checkbox" id="hd" ${state.hideDone ? 'checked' : ''}> Дууссан тойргийг нуух</label>` +
-    (active ? `<button type="button" class="linkbtn" id="reset">Шүүлтүүр арилгах</button>` : '');
+    `<button type="button" class="linkbtn" id="reset" ${isActive() ? '' : 'hidden'}>Шүүлтүүр арилгах</button>`;
   $('filters').querySelectorAll('.fchip').forEach(b => b.onclick = () => { state.sport = b.dataset.s; renderView(); });
   $('psel').onchange = e => { state.player = e.target.value; renderView(); };
   $('hd').onchange = e => { state.hideDone = e.target.checked; renderView(); };
-  const r = $('reset'); if(r) r.onclick = () => { state.sport = 'all'; state.player = ''; state.hideDone = false; renderView(); };
+  $('reset').onclick = () => { state.sport = 'all'; state.player = ''; state.hideDone = false; state.q = ''; $('q').value = ''; renderView(); };
+  let qT; $('q').oninput = e => { clearTimeout(qT); qT = setTimeout(() => { state.q = e.target.value.trim().toLowerCase(); renderPCard(state.data); renderSchedule(state.data); syncReset(); }, 120); };
 }
+const isActive = () => state.sport !== 'all' || !!state.player || state.hideDone || !!state.q;
+function syncReset(){ const b = $('reset'); if(b) b.hidden = !isActive(); }
 
 function renderPCard(d){
-  const p = state.player && d.st[state.player];
+  let p = state.player && d.st[state.player];
+  if(!p && state.q){ const f = d.players.filter(x => x.name.toLowerCase().includes(state.q)); if(f.length === 1) p = d.st[f[0].code]; }
   if(!p){ $('pcard').innerHTML = ''; return; }
   const list = p.gender === 'Эмэгтэй' ? d.women : d.men, pos = list.find(x => x.code === p.code)?.pos, df = p.gw - p.gl;
   $('pcard').innerHTML = `<div class="pcard"><span><b>${esc(p.name)}</b> · ${esc(teamName(d, p.team))}</span><span>Тоглосон: <b>${p.played}</b></span><span>Хожсон: <b>${p.wins}</b></span><span>Гейм зөрүү: <b>${df > 0 ? '+' : ''}${df}</b></span><span>${p.gender === 'Эмэгтэй' ? 'Эмэгтэйчүүдийн' : 'Эрэгтэйчүүдийн'} эрэмбэ: <b>${pos}</b></span></div>`;
@@ -596,17 +608,22 @@ function renderPCard(d){
 function renderSchedule(d){
   if(!d.rounds.length){ $('schedule').innerHTML = '<div class="empty">Хуваарь хараахан үүсээгүй байна. Тамирчдыг «Тамирчид» хуудсанд бүртгэнэ үү.</div>'; return; }
   const mine = m => m && (m.aCode === state.player || m.bCode === state.player);
+  const q = state.q, activeF = !!(state.player || q);
+  const hit = m => !q || `${m.aName} ${m.bName}`.toLowerCase().includes(q);
+  const keep = m => !!m && (!state.player || mine(m)) && hit(m);
   const vis = SPORTS.filter(s => state.sport === 'all' || state.sport === s.key);
   const rows = d.rounds.map((r, i) => ({r, i}))
     .filter(({r}) => !(state.hideDone && r.complete))
-    .filter(({r}) => !state.player || SPORTS.some((s, si) => vis.includes(s) && mine(r.matches[si])));
-  if(!rows.length){ $('schedule').innerHTML = '<div class="empty">Тохирох тоглолт алга. Шүүлтүүрээ өөрчилнө үү.</div>'; return; }
+    .filter(({r}) => !activeF || SPORTS.some((s, si) => vis.includes(s) && keep(r.matches[si])));
+  const found = rows.reduce((n, {r}) => n + SPORTS.filter((s, si) => vis.includes(s) && keep(r.matches[si])).length, 0);
+  $('sres').textContent = activeF ? (found ? `${found} тоглолт олдлоо` : 'Тоглолт олдсонгүй') : '';
+  if(!rows.length){ $('schedule').innerHTML = '<div class="empty">Тохирох тоглолт алга. Хайлт, шүүлтүүрээ өөрчилнө үү.</div>'; return; }
   $('schedule').style.setProperty('--n', vis.length);
   $('schedule').innerHTML =
     `<div class="hdrrow"><span>Тойрог</span>${vis.map(s => `<span>${s.icon} ${esc(s.label)}</span>`).join('')}</div>` +
     rows.map(({r, i}) => `<div class="round ${i === d.cur ? 'cur' : ''}">
       <div class="rhead"><div class="rn">${r.n}-р тойрог</div>${i === d.cur ? '<span class="now">ОДОО</span>' : ''}${r.complete ? '<span class="chip done">✓ Дууссан</span>' : ''}</div>
-      ${SPORTS.map((s, si) => vis.includes(s) ? matchHTML(r.matches[si], state.player && !mine(r.matches[si])) : '').join('')}</div>`).join('');
+      ${SPORTS.map((s, si) => vis.includes(s) ? matchHTML(r.matches[si], activeF && !keep(r.matches[si]), q) : '').join('')}</div>`).join('');
 }
 
 function renderBoards(d){
@@ -624,7 +641,7 @@ function renderBanners(){
   $('banners').innerHTML = b.join('');
 }
 
-function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); }
+function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); syncReset(); }
 function renderHow(d){
   const p = [d.tM && `эрэгтэй — түрүүлж <b>${d.tM}</b>`, d.tW && `эмэгтэй — түрүүлж <b>${d.tW}</b>`].filter(Boolean);
   if(p.length) $('howT').innerHTML = p.join(', ').replace(/^./, c => c.toUpperCase()) + ' гейм хожно';
