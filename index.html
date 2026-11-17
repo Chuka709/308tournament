@@ -201,7 +201,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
       <button class="btn" id="refresh" type="button"><span class="spin">↻</span> Шинэчлэх</button>
       <button class="btn" id="fs" type="button">⛶ Бүтэн дэлгэц</button>
       <span id="who"></span><span class="pill" id="lockbadge" hidden>🔒 Хуваарь түгжигдсэн</span>
-      <button class="btn pri" id="login" type="button" hidden>🔒 Засах</button><button class="btn" id="adminbtn" type="button" hidden>⚙ Тохиргоо</button>
+      <button class="btn pri" id="login" type="button">🔒 Засах</button><button class="btn" id="adminbtn" type="button" hidden>⚙ Тохиргоо</button>
       <button class="btn" id="theme" type="button" aria-label="Харанхуй эсвэл цайвар горим сонгох">◐ Горим</button>
     </div>
   </header>
@@ -666,12 +666,16 @@ async function refresh(){
 /* ---------- Нэвтрэлт ---------- */
 function renderSession(){
   const s = state.session, d = state.data;
-  $('login').hidden = !canEdit || !!s;
+  $('login').hidden = !!s;
   $('adminbtn').hidden = !(s && s.role === 'admin');
   $('who').innerHTML = s ? `<span class="chipw">👤 ${esc(s.name)} · ${s.role === 'admin' ? 'админ' : 'шүүгч'} <button class="btn" id="logout" type="button">Гарах</button></span>` : '';
   $('lockbadge').hidden = !(d && d.locked);
 }
 async function openLogin(){
+  if(!canEdit){
+    $('modalBody').innerHTML = `<h3>🔒 Засах горим тохируулаагүй байна</h3><p>Апп дээрээс оноо оруулахын тулд <b>index.html</b>-ийн дээд талын тохиргоонд Apps Script-ийн вэб хаягийг бичнэ:</p><p><code>API_URL: "https://script.google.com/macros/s/…/exec"</code></p><p class="hint">Заавар: SETUP.md (4–5-р алхам). Одоохондоо зөвхөн харах горимд ажиллана.</p>`;
+    openModal('info'); return;
+  }
   let refs = [];
   try{ const r = await Api.call('listReferees'); if(r.ok) refs = r.referees; }catch(e){ toast('Серверт холбогдож чадсангүй.'); }
   $('modalBody').innerHTML = `<h3>🔒 Нэвтрэх</h3>
@@ -886,6 +890,7 @@ $('theme').onclick = () => {
 };
 if(!document.fullscreenEnabled) $('fs').hidden = true;
 $('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+renderSession();
 function loop(){
   setTimeout(async () => { if(!document.hidden && !state.modal) await refresh(); loop(); }, state.session ? 8000 : Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
 }
