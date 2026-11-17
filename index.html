@@ -178,6 +178,9 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 .step:active{transform:scale(.96)}.step[disabled]{opacity:.35;cursor:not-allowed}
 .ed-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:16px}
 .savest{font-size:13px;color:var(--muted)}.savest.ok{color:var(--ok)}.savest.err{color:var(--bad);font-weight:700}
+.own{font-size:12px;color:var(--muted);font-weight:600}
+.match.readonly{cursor:not-allowed}
+.match.readonly .mh::after{content:"🔒";font-size:11px}
 .match.editable{cursor:pointer;outline:1px dashed transparent}.match.editable:hover{outline-color:var(--muted)}
 .match.editable .mh::after{content:"✎";color:var(--muted)}
 .toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:11px 16px;border-radius:14px;font-size:14px;z-index:60;max-width:90vw;box-shadow:var(--shadow)}
@@ -246,7 +249,7 @@ const CONFIG = {
   SHEET_ID: "1LRr04SV5zJUn3wNLlRwuHKYTOTJP2eFLh-tcinHboM8",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
   REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
   TITLE: "Багийн тэмцээн", // хуудасны гарчиг
-  API_URL: "https://script.google.com/macros/s/AKfycbx97cMaoVluR0IaTMjz4GMmUnUevforyDDGzB_biGe7HOV54mtJn9pXgF_oAe1fpqYq/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
+  API_URL: "https://script.google.com/macros/s/AKfycby5N7wqlQbNGonLAiQEdrswjKhaBN_wt25ab1pglPGLrx1GuRKGKYftqTKKDIduP7U/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
   TABS: { roster: "Тамирчид", darts: "Дартс", tennis: "Теннис", pool: "Биллиард" } // Sheets доторх табын нэрс
 };
 /* ======================================================= */
@@ -290,7 +293,7 @@ async function loadFromSheet(){
   }
   if(!roster){
     [roster, ...sp] = await Promise.all([
-      gviz(T.roster, 'A3:G47'), gviz(T.darts, 'A5:L204'), gviz(T.tennis, 'A5:L204'), gviz(T.pool, 'A5:L204')
+      gviz(T.roster, 'A3:G47'), gviz(T.darts, 'A5:P204'), gviz(T.tennis, 'A5:P204'), gviz(T.pool, 'A5:P204')
     ]).catch(e => { throw apiErr || e; });
   }
   const teamA = txt(roster[0]?.[1]) || 'А баг', teamB = txt(roster[1]?.[1]) || 'Б баг';
@@ -303,7 +306,7 @@ async function loadFromSheet(){
     matches.push({
       sport:s.key, round:num(r[0]), aCode:txt(r[1]), aName:txt(r[2]), bCode:txt(r[3]), bName:txt(r[4]),
       fa:num(r[5]), fb:num(r[6]), status:txt(r[7]) || PEND, winTeam:txt(r[8]), winCode:txt(r[9]),
-      gender:txt(r[10]), target:num(r[11])
+      gender:txt(r[10]), target:num(r[11]), ownerName:txt(r[14]), ownerId:txt(r[15])
     });
   }));
   return {teamA, teamB, players, matches, locked: txt(roster[0]?.[6]).includes('ТҮГЖИГДСЭН'), tM: num(roster[0]?.[4]), tW: num(roster[1]?.[4])};
@@ -403,7 +406,7 @@ const DemoApi = {
   init(){
     const raw = demoRaw();
     this.db = {teamA:raw.teamA, teamB:raw.teamB, tM:3, tW:2, locked:false, players:raw.players.map(p => ({...p})),
-      matches:raw.matches.map(m => ({...m})), adminPin:'1234',
+      matches:raw.matches.map(m => ({...m, ownerId:m.fa != null ? (m.round % 2 ? 'r1' : 'r2') : '', ownerName:m.fa != null ? (m.round % 2 ? 'Шүүгч Болд' : 'Шүүгч Сарнай') : ''})), adminPin:'1234',
       referees:[{id:'r1', name:'Шүүгч Болд', pin:'1111'}, {id:'r2', name:'Шүүгч Сарнай', pin:'2222'}], log:[]};
   },
   raw(){
@@ -421,8 +424,8 @@ const DemoApi = {
       if(p.who === 'admin'){ if(p.pin === d.adminPin){ role = 'admin'; name = 'Админ'; } }
       else { const r = d.referees.find(x => x.id === p.who); if(r && r.pin === p.pin){ role = 'referee'; name = r.name; } }
       if(!role) return bad('BAD_PIN', 'PIN буруу байна.');
-      const token = 'demo-' + Math.random().toString(36).slice(2); this.tokens[token] = {role, name};
-      this.log(role, name, 'login', ''); return ok({token, role, name});
+      const token = 'demo-' + Math.random().toString(36).slice(2); this.tokens[token] = {role, name, who:p.who};
+      this.log(role, name, 'login', ''); return ok({token, role, name, id:p.who});
     }
     const sess = this.tokens[p.token];
     if(!sess) return bad('AUTH', 'Нэвтрэх хугацаа дууссан байна. Дахин нэвтэрнэ үү.');
@@ -431,6 +434,7 @@ const DemoApi = {
     if(a === 'saveScore' || a === 'clearScore'){
       const m = d.matches.find(x => x.sport === p.sport && x.aCode === p.aCode && x.bCode === p.bCode);
       if(!m) return bad('NOT_FOUND', 'Тоглолт олдсонгүй. Хуудсыг шинэчилнэ үү.');
+      if(sess.role !== 'admin' && m.ownerId && m.ownerId !== sess.who) return bad('NOT_OWNER', `Энэ тоглолтын оноог ${m.ownerName} оруулсан. Зөвхөн тэр шүүгч эсвэл админ засна.`, {owner:m.ownerName});
       if(p.prev && ((p.prev.fa ?? null) !== (m.fa ?? null) || (p.prev.fb ?? null) !== (m.fb ?? null))) return bad('CONFLICT', 'Энэ тоглолтын оноог өөр хүн өөрчилсөн байна.', {fa:m.fa ?? null, fb:m.fb ?? null});
       let fa = null, fb = null; const t = m.target;
       if(a === 'saveScore'){
@@ -442,7 +446,9 @@ const DemoApi = {
         }
       }
       this.log(sess.role, sess.name, a, `${p.sport} ${p.aCode}–${p.bCode}: ${m.fa ?? '·'}:${m.fb ?? '·'} → ${fa ?? '·'}:${fb ?? '·'}`);
-      m.fa = fa; m.fb = fb; derive(m); return ok({fa, fb, target:t});
+      m.fa = fa; m.fb = fb; derive(m);
+      if(fa === null){ m.ownerId = ''; m.ownerName = ''; } else if(!m.ownerId){ m.ownerId = sess.who; m.ownerName = sess.name; }
+      return ok({fa, fb, target:t});
     }
     if(sess.role !== 'admin') return bad('FORBIDDEN', 'Энэ үйлдлийг зөвхөн админ хийнэ.');
     if(a === 'saveSettings'){
@@ -484,7 +490,7 @@ const DemoApi = {
     }
     if(a === 'resetScores'){
       if(p.confirm !== 'ЦЭВЭРЛЭХ') return bad('BAD_INPUT', 'Баталгаажуулах үг буруу байна.');
-      d.matches.forEach(m => { m.fa = null; m.fb = null; derive(m); }); this.log(sess.role, sess.name, 'resetScores', ''); return ok({});
+      d.matches.forEach(m => { m.fa = null; m.fb = null; m.ownerId = ''; m.ownerName = ''; derive(m); }); this.log(sess.role, sess.name, 'resetScores', ''); return ok({});
     }
     if(a === 'addReferee'){
       const name = String(p.name || '').trim();
@@ -510,14 +516,19 @@ const state = {sport:'all', player:'', hideDone:false, data:null, demo:false, la
 const $ = id => document.getElementById(id);
 const teamName = (d, t) => t === 'A' ? d.teamA : d.teamB;
 
+function canEditMatch(m){
+  const s = state.session; if(!s || !m) return false;
+  return s.role === 'admin' || !m.ownerId || m.ownerId === s.id;
+}
 function matchHTML(m, ph){
   if(!m || ph) return `<div class="match ph" aria-hidden="true">—</div>`;
   const cls = m.status === DONE ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : 'pend';
   const sp = SPORTS.find(s => s.key === m.sport), g = m.gender === 'Эмэгтэй';
   const aw = m.status === DONE && m.winTeam === 'A', bw = m.status === DONE && m.winTeam === 'B';
   const sc = m.status === PEND ? 'vs' : `${m.fa ?? 0} : ${m.fb ?? 0}`;
-  return `<div class="match ${cls}${state.session ? ' editable' : ''}"${state.session ? ` data-key="${esc(mkey(m))}"` : ''}>
-    <div class="mh"><span class="sport-lbl">${sp.icon} ${esc(sp.label)}</span><span class="gtag">${g ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</span><span>түрүүлж ${m.target || (g ? 2 : 3)}</span><span class="sp"></span><span class="chip ${cls}">${esc(m.status)}</span></div>
+  const ce = canEditMatch(m), ro = state.session && !ce;
+  return `<div class="match ${cls}${ce ? ' editable' : ''}${ro ? ' readonly' : ''}"${ce ? ` data-key="${esc(mkey(m))}"` : ''}${ro ? ` data-owner="${esc(m.ownerName || '')}"` : ''}>
+    <div class="mh"><span class="sport-lbl">${sp.icon} ${esc(sp.label)}</span><span class="gtag">${g ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</span><span>түрүүлж ${m.target || (g ? 2 : 3)}</span>${m.ownerName ? `<span class="own">👤 ${esc(m.ownerName)}</span>` : ''}<span class="sp"></span><span class="chip ${cls}">${esc(m.status)}</span></div>
     <div class="mp"><span class="pl a ${aw ? 'win' : ''}">${aw ? '✓ ' : ''}${esc(m.aName)}</span><span class="sc">${sc}</span><span class="pl b ${bw ? 'win' : ''}">${bw ? '✓ ' : ''}${esc(m.bName)}</span></div></div>`;
 }
 
@@ -658,7 +669,7 @@ function applyPending(raw){
     if(!m || now > p.until){ state.pending.delete(key); return; }
     if((m.fa ?? null) === (p.fa ?? null) && (m.fb ?? null) === (p.fb ?? null)){ state.pending.delete(key); return; }
     if(p.srv) m.srv = p.srv;
-    m.fa = p.fa; m.fb = p.fb; derive(m);
+    m.fa = p.fa; m.fb = p.fb; m.ownerId = p.ownerId; m.ownerName = p.ownerName; derive(m);
   });
 }
 
@@ -709,7 +720,7 @@ async function doLogin(){
   try{
     const r = await Api.call('login', {who, pin});
     if(r.ok){
-      state.session = {token:r.token, role:r.role, name:r.name};
+      state.session = {token:r.token, role:r.role, name:r.name, id:r.id};
       if(!useDemo) sessionStorage.setItem('tsess', JSON.stringify(state.session));
       closeModal(); toast(`Тавтай морил, ${r.name}`);
     } else { $('lerr').innerHTML = `<div class="msg err">${esc(r.message || 'Алдаа гарлаа')}</div>`; $('lgo').disabled = false; }
@@ -721,6 +732,7 @@ async function doLogout(){
 }
 function handleApiError(r, key){
   if(r.error === 'AUTH'){ state.session = null; sessionStorage.removeItem('tsess'); renderSession(); renderAll(); closeModal(); openLogin(); toast('Нэвтрэх хугацаа дууссан. Дахин нэвтэрнэ үү.'); return; }
+  if(r.error === 'NOT_OWNER' && key){ state.pending.delete(key); closeModal(); toast(r.message || 'Энэ тоглолтыг өөр шүүгч шүүж байна.'); return; }
   if(r.error === 'CONFLICT' && key){ state.pending.delete(key); toast('Энэ тоглолтын оноог өөр шүүгч өөрчилсөн байна. Шинэчилж байна…'); refresh(); return; }
   toast(r.message || 'Алдаа гарлаа');
 }
@@ -741,7 +753,7 @@ function renderEditor(){
       <div class="tn">${esc(team)}</div><div class="pn">${esc(name)}</div><div class="num">${v}</div>
       <div class="btns"><button class="step" data-s="${who}" data-d="-1" ${v <= 0 ? 'disabled' : ''} aria-label="${esc(name)} −1">−</button><button class="step" data-s="${who}" data-d="1" ${plus(v, o) ? '' : 'disabled'} aria-label="${esc(name)} +1">+</button></div></div>`;
   $('modalBody').innerHTML = `<h3>${sp.icon} ${esc(sp.label)} · ${m.gender === 'Эмэгтэй' ? '♀ Эмэгтэй' : '♂ Эрэгтэй'}</h3>
-    <div class="ed-head">Түрүүлж <b>${t}</b> хожсон нь хожно · <span class="chip ${done ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : ''}">${esc(m.status)}</span>${done ? ` · 🏆 <b>${esc(m.winCode === m.aCode ? m.aName : m.bName)}</b> хожлоо` : ''}</div>
+    <div class="ed-head">${m.ownerName ? `👤 Шүүгч: <b>${esc(m.ownerName)}</b> · ` : ''}Түрүүлж <b>${t}</b> хожсон нь хожно · <span class="chip ${done ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : ''}">${esc(m.status)}</span>${done ? ` · 🏆 <b>${esc(m.winCode === m.aCode ? m.aName : m.bName)}</b> хожлоо` : ''}</div>
     <div class="ed">${side('a', teamName(d, 'A'), m.aName, A, B, 'a')}${side('b', teamName(d, 'B'), m.bName, B, A, 'b')}</div>
     <div class="ed-foot"><span class="savest" id="savest"></span><span><button class="btn" id="edclear" type="button">Цэвэрлэх</button> <button class="btn pri" id="eddone" type="button">Болсон</button></span></div>`;
   if(state.inflight.has(state.editKey) || state.timers[state.editKey]) setSaveState('saving');
@@ -749,8 +761,10 @@ function renderEditor(){
 function setLocalScore(key, fa, fb){
   const m = findMatch(key); if(!m) return;
   m.fa = fa; m.fb = fb; derive(m);
+  if(fa == null){ m.ownerId = ''; m.ownerName = ''; }
+  else if(!m.ownerId && state.session){ m.ownerId = state.session.id; m.ownerName = state.session.name; }
   const prevP = state.pending.get(key);
-  state.pending.set(key, {fa, fb, until:Date.now() + 20000, srv:prevP && prevP.srv});
+  state.pending.set(key, {fa, fb, ownerId:m.ownerId, ownerName:m.ownerName, until:Date.now() + 20000, srv:prevP && prevP.srv});
   state.data = compute(state.raw); renderAll(); renderSession(); renderEditor();
   clearTimeout(state.timers[key]); state.timers[key] = setTimeout(() => { delete state.timers[key]; doSave(key); }, 400);
   setSaveState('saving');
@@ -890,7 +904,9 @@ document.addEventListener('click', e => {
   if(state.modal === 'login'){ if(t.id === 'lgo') doLogin(); return; }
   if(state.modal === 'admin'){ const b = t.closest('[data-act]'); if(b && !b.disabled) adminAct(b.dataset.act, b); return; }
   const card = t.closest && t.closest('.match[data-key]');
-  if(card && state.session && !state.modal) openEditor(card.dataset.key);
+  if(card && state.session && !state.modal){ openEditor(card.dataset.key); return; }
+  const ro = t.closest && t.closest('.match.readonly');
+  if(ro && state.session && !state.modal) toast(`Энэ тоглолтыг ${ro.dataset.owner || 'өөр шүүгч'} шүүж байна. Зөвхөн тэр шүүгч эсвэл админ засна.`);
 });
 document.addEventListener('input', e => {
   if(state.modal === 'admin' && e.target.dataset && e.target.dataset.g){ state.admin.text[e.target.dataset.g] = e.target.value; updateEst(); }
