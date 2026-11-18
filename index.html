@@ -179,6 +179,11 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 .ed-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:16px}
 .savest{font-size:13px;color:var(--muted)}.savest.ok{color:var(--ok)}.savest.err{color:var(--bad);font-weight:700}
 .fgroup input[type=search]{padding:7px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:13.5px;width:210px;max-width:100%}
+#imgList{display:grid;gap:14px;margin:14px 0}
+.snap{border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--surface2)}
+.snap .st{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-weight:800;font-size:14px}
+.snap .box{max-height:380px;overflow:auto;border-radius:10px;background:#fff}
+.snap img{display:block;width:100%;height:auto}
 mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2px;outline:1px solid var(--live)}
 .own{font-size:12px;color:var(--muted);font-weight:600}
 .match.readonly{cursor:not-allowed}
@@ -205,6 +210,7 @@ mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2
     <div class="tools" id="tools">
       <span class="pill" role="status"><span class="dot off" id="dot"></span><span id="upd">Ачаалж байна…</span></span>
       <button class="btn" id="refresh" type="button"><span class="spin">↻</span> Шинэчлэх</button>
+      <button class="btn" id="imgbtn" type="button">📷 Зураг</button>
       <button class="btn" id="fs" type="button">⛶ Бүтэн дэлгэц</button>
       <span id="who"></span><span class="pill" id="lockbadge" hidden>🔒 Хуваарь түгжигдсэн</span>
       <button class="btn pri" id="login" type="button">🔒 Засах</button><button class="btn" id="adminbtn" type="button" hidden>⚙ Тохиргоо</button>
@@ -673,6 +679,7 @@ let toastT = null;
 function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3800); }
 function openModal(name){ state.modal = name; $('modal').hidden = false; document.body.style.overflow = 'hidden'; }
 function closeModal(){
+  if(state.snap){ state.snap.imgs.forEach(i => URL.revokeObjectURL(i.url)); state.snap = null; }
   const was = state.modal; state.modal = null; $('modal').hidden = true; $('modalBody').innerHTML = ''; document.body.style.overflow = ''; state.editKey = null;
   if(was) refresh();
 }
@@ -907,6 +914,202 @@ async function adminAct(act, el){
   if(act === 'refDel'){ if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const r = await call('removeReferee', {id:el.dataset.id}, 'Шүүгч устгагдлаа.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
 }
 
+/* ---------- Зураг болгох (canvas; олон зурагт хуваана) ---------- */
+const SNAP = {W:1080, S:2, P:48, ROUNDS_PER_PAGE:12,
+  FONT:"Manrope,'Segoe UI',system-ui,-apple-system,Arial,sans-serif", DISP:"Unbounded,Manrope,'Segoe UI',system-ui,sans-serif",
+  C:{bg:'#f3f4f9', card:'#ffffff', text:'#12172b', muted:'#5b6380', line:'#dde0ee', a:'#b85f00', b:'#00796e', ok:'#17853f', okS:'#d9f3e2', live:'#a86400', liveS:'#ffe9bd', s2:'#eceef6'}};
+function snapCanvas(h){
+  const c = document.createElement('canvas'); c.width = SNAP.W * SNAP.S; c.height = Math.ceil(h * SNAP.S);
+  const x = c.getContext('2d'); x.scale(SNAP.S, SNAP.S); x.fillStyle = SNAP.C.bg; x.fillRect(0, 0, SNAP.W, h); x.textBaseline = 'alphabetic';
+  return {c, x, h};
+}
+function rrect(x, px, py, w, h, rad, fill, stroke, lw){
+  const r = Math.min(rad, w / 2, h / 2);
+  x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath();
+  if(fill){ x.fillStyle = fill; x.fill(); } if(stroke){ x.strokeStyle = stroke; x.lineWidth = lw || 1; x.stroke(); }
+}
+function stx(x, s, px, py, o = {}){
+  const {size = 24, weight = 600, color = SNAP.C.text, align = 'left', font = SNAP.FONT, max = 0} = o;
+  x.font = `${weight} ${size}px ${font}`; x.fillStyle = color; x.textAlign = align;
+  let str = String(s ?? '');
+  if(max && x.measureText(str).width > max){ while(str.length > 1 && x.measureText(str + '…').width > max) str = str.slice(0, -1); str += '…'; }
+  x.fillText(str, px, py); return x.measureText(str).width;
+}
+function scoreStr(x, a, b, right, y, size, font){   // «a : b» баруун захад зэрэгцүүлнэ
+  const f = `600 ${size}px ${font}`; x.font = f; x.textAlign = 'left';
+  const sa = String(a), sb = String(b), sep = ' : ';
+  const wa = x.measureText(sa).width, ws = x.measureText(sep).width, wb = x.measureText(sb).width;
+  let px = right - (wa + ws + wb);
+  x.fillStyle = SNAP.C.a; x.fillText(sa, px, y); px += wa;
+  x.fillStyle = SNAP.C.muted; x.fillText(sep, px, y); px += ws;
+  x.fillStyle = SNAP.C.b; x.fillText(sb, px, y);
+}
+function legend(x, d, right, y){
+  const C = SNAP.C; let px = right;
+  [[d.teamB, C.b], [d.teamA, C.a]].forEach(([n, col]) => {
+    x.font = `600 22px ${SNAP.FONT}`; const w = Math.min(x.measureText(n).width, 200);
+    stx(x, n, px, y, {size:22, color:C.text, align:'right', max:200}); rrect(x, px - w - 22, y - 16, 16, 16, 4, col); px -= w + 22 + 26;
+  });
+}
+const pad2 = n => String(n).padStart(2, '0');
+const fmtStamp = dt => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())} ${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+function snapHeader(x, d, sub, y0){
+  const {P, C, W} = SNAP;
+  stx(x, CONFIG.TITLE, P, y0 + 40, {size:40, weight:800, font:SNAP.DISP, max:W - 2 * P});
+  stx(x, sub, P, y0 + 82, {size:24, color:C.muted, max:520});
+  legend(x, d, W - P, y0 + 82);
+}
+
+function snapSummary(d, stamp){
+  const {P, W, C} = SNAP, H = 1240, {c, x} = snapCanvas(H);
+  snapHeader(x, d, 'Ерөнхий дүн', P);
+  const hy = 170, hh = 470, hw = W - 2 * P;
+  rrect(x, P, hy, hw, hh, 24, C.card, C.line);
+  const finished = d.total > 0 && d.doneCount === d.total, lead = d.pts.A > d.pts.B ? 'A' : d.pts.B > d.pts.A ? 'B' : '';
+  const cxA = P + 215, cxB = W - P - 215;
+  [['A', cxA, C.a, d.teamA], ['B', cxB, C.b, d.teamB]].forEach(([t, cx, col, name]) => {
+    x.font = `800 34px ${SNAP.FONT}`; const nw = Math.min(x.measureText(name).width, 300);
+    rrect(x, cx - nw / 2 - 28, hy + 62, 18, 18, 5, col); stx(x, name, cx - nw / 2 + 4 - 4 + 0, hy + 80, {size:34, weight:800, color:col, max:300});
+    const sc = d.pts[t]; stx(x, sc, cx, hy + 250, {size:sc >= 100 ? 120 : 170, weight:800, color:col, align:'center', font:SNAP.DISP});
+    stx(x, `Хожсон гейм: ${d.games[t]}`, cx, hy + 305, {size:24, color:C.muted, align:'center'});
+    if(lead === t && !finished) rrect(x, cx - 90, hy + 322, 180, 8, 4, col);
+  });
+  stx(x, 'VS', W / 2, hy + 190, {size:30, weight:800, color:C.muted, align:'center', font:SNAP.DISP});
+  const winName = finished ? (lead ? teamName(d, lead) : (d.games.A !== d.games.B ? (d.games.A > d.games.B ? d.teamA : d.teamB) : '')) : '';
+  let status = !d.doneCount ? 'Тэмцээн эхлээгүй' : finished ? 'Тэмцээн дууслаа' : (lead ? `${teamName(d, lead)} тэргүүлж байна` : 'Тэнцэж байна');
+  if(finished){ rrect(x, P + 40, hy + 352, hw - 80, 56, 16, C.okS); stx(x, winName ? `ХОЖЛОО: ${winName}` : 'ТЭНЦЛЭЭ', W / 2, hy + 390, {size:28, weight:800, color:C.ok, align:'center', max:hw - 120}); }
+  else stx(x, status, W / 2, hy + 392, {size:30, weight:800, align:'center', max:hw - 80});
+  const pct = d.total ? d.doneCount / d.total : 0, bx = P + 40, bw = hw - 80;
+  rrect(x, bx, hy + 424, bw, 12, 6, C.s2); if(pct > 0){ const g = x.createLinearGradient(bx, 0, bx + bw, 0); g.addColorStop(0, C.a); g.addColorStop(1, C.b); rrect(x, bx, hy + 424, Math.max(12, bw * pct), 12, 6, g); }
+  stx(x, `${d.doneCount} / ${d.total} тоглолт дууссан`, bx, hy + 458, {size:20, color:C.muted});
+  stx(x, `${Math.round(pct * 100)}%`, bx + bw, hy + 458, {size:20, color:C.muted, align:'right'});
+
+  let y = hy + hh + 56;
+  stx(x, 'Төрөл тус бүрийн дүн', P, y, {size:30, weight:800, font:SNAP.DISP, max:600});
+  const cy = y + 28, gap = 20, cw = (W - 2 * P - 2 * gap) / 3, ch = 360;
+  SPORTS.forEach((s, i) => {
+    const cx = P + i * (cw + gap), bs = d.bySport[s.key];
+    rrect(x, cx, cy, cw, ch, 20, C.card, C.line);
+    stx(x, s.label, cx + 24, cy + 52, {size:26, weight:800, max:cw - 48});
+    const mt = d.matches.filter(m => m.sport === s.key), done = mt.filter(m => m.status === DONE).length;
+    const row = (lab, g, yy) => { stx(x, lab, cx + 24, yy, {size:24, color:C.muted}); scoreStr(x, bs[g].A, bs[g].B, cx + cw - 24, yy + 2, 38, SNAP.DISP); };
+    row('Эрэгтэй', 'Эрэгтэй', cy + 120); row('Эмэгтэй', 'Эмэгтэй', cy + 196);
+    x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(cx + 24, cy + 226); x.lineTo(cx + cw - 24, cy + 226); x.stroke();
+    stx(x, 'Нийт', cx + 24, cy + 286, {size:26, weight:800});
+    scoreStr(x, bs['Эрэгтэй'].A + bs['Эмэгтэй'].A, bs['Эрэгтэй'].B + bs['Эмэгтэй'].B, cx + cw - 24, cy + 288, 44, SNAP.DISP);
+    stx(x, `Дууссан: ${done} / ${mt.length}`, cx + 24, cy + 338, {size:20, color:C.muted});
+  });
+  const fy = cy + ch + 56;
+  stx(x, `Хожсон тоглолт бүр 1 оноо · Эрэгтэй түрүүлж ${d.tM ?? 3}, эмэгтэй түрүүлж ${d.tW ?? 2} гейм хожно`, W / 2, fy, {size:20, color:C.muted, align:'center', max:W - 2 * P});
+  stx(x, `Шинэчилсэн: ${stamp}`, W / 2, fy + 32, {size:20, color:C.muted, align:'center'});
+  return finishSnap(c, x, fy + 56, H);
+}
+function finishSnap(c, x, usedH, H){ return {c, usedH: Math.ceil(usedH)}; }
+
+function snapRounds(d, rounds, page, pages, stamp, curN){
+  const {P, W, C} = SNAP, rowH = 100, cellH = 92, top = 184, H = top + rounds.length * rowH + 90, {c, x} = snapCanvas(H);
+  snapHeader(x, d, `Тойргийн дүн · ${rounds[0].n}–${rounds[rounds.length - 1].n}-р тойрог · ${page}/${pages}`, P);
+  const rc = 104, gap = 10, cw = (W - 2 * P - rc - 2 * gap) / 3;
+  stx(x, 'Тойрог', P, top - 14, {size:20, weight:800, color:C.muted});
+  SPORTS.forEach((s, i) => stx(x, s.label, P + rc + i * (cw + gap) + cw / 2, top - 14, {size:22, weight:800, align:'center'}));
+  rounds.forEach((r, ri) => {
+    const y = top + ri * rowH, cur = r.n === curN;
+    if(cur) rrect(x, P - 12, y - 6, W - 2 * P + 24, rowH - 2, 18, C.liveS);
+    stx(x, r.n, P + 40, y + 52, {size:36, weight:800, align:'center', font:SNAP.DISP});
+    if(r.complete) stx(x, '✓', P + 40, y + 84, {size:22, weight:800, color:C.ok, align:'center'}); else if(cur) stx(x, 'ОДОО', P + 40, y + 84, {size:17, weight:800, color:C.live, align:'center'});
+    SPORTS.forEach((s, si) => {
+      const m = r.matches[si], cx = P + rc + si * (cw + gap);
+      if(!m){ rrect(x, cx, y, cw, cellH, 14, null, C.line, 1.5); stx(x, '—', cx + cw / 2, y + 56, {size:26, color:C.line, align:'center'}); return; }
+      const st = m.status, stripe = st === DONE ? C.ok : st === LIVE ? C.live : C.line, fill = st === LIVE ? C.liveS : st === DONE ? C.card : C.s2;
+      rrect(x, cx, y, cw, cellH, 14, fill, C.line); rrect(x, cx, y, 8, cellH, 4, stripe);
+      stx(x, m.gender === 'Эмэгтэй' ? 'эмэгтэй' : 'эрэгтэй', cx + 22, y + 20, {size:14, weight:700, color:C.muted});
+      if(st === LIVE) stx(x, 'тоглож байна', cx + cw - 14, y + 20, {size:14, weight:800, color:C.live, align:'right'});
+      const line = (name, sc, win, col, yy) => {
+        rrect(x, cx + 22, yy - 12, 10, 10, 3, col);
+        stx(x, (win ? '✓ ' : '') + name, cx + 40, yy, {size:23, weight:win ? 800 : 600, color:win ? col : C.text, max:cw - 40 - 56});
+        stx(x, st === PEND ? '–' : (sc ?? 0), cx + cw - 16, yy, {size:26, weight:800, color:st === DONE && !win ? C.muted : C.text, align:'right', font:SNAP.DISP});
+      };
+      line(m.aName, m.fa, st === DONE && m.winTeam === 'A', C.a, y + 50); line(m.bName, m.fb, st === DONE && m.winTeam === 'B', C.b, y + 80);
+    });
+  });
+  stx(x, `Шинэчилсэн: ${stamp}`, W / 2, H - 30, {size:20, color:C.muted, align:'center'});
+  return {c, usedH:H};
+}
+
+function snapRank(d, stamp){
+  const {P, W, C} = SNAP, rows = Math.max(d.men.length, d.women.length, 1), rowH = 84, top = 250, H = top + rows * rowH + 110, {c, x} = snapCanvas(H);
+  snapHeader(x, d, 'Тамирчдын эрэмбэ', P);
+  const gap = 24, cw = (W - 2 * P - gap) / 2, medal = ['#f5c542', '#cfd5e3', '#d99a66'];
+  [['Эрэгтэй', d.men], ['Эмэгтэй', d.women]].forEach(([title, list], ci) => {
+    const cx = P + ci * (cw + gap), ch = 96 + Math.max(list.length, 1) * rowH + 20;
+    rrect(x, cx, 150, cw, ch, 22, C.card, C.line);
+    stx(x, title, cx + 24, 150 + 46, {size:30, weight:800, font:SNAP.DISP});
+    stx(x, 'Хожсон', cx + cw - 112, 150 + 80, {size:16, weight:800, color:C.muted, align:'center'}); stx(x, 'Зөрүү', cx + cw - 38, 150 + 80, {size:16, weight:800, color:C.muted, align:'center'});
+    if(!list.length) stx(x, 'Тамирчин бүртгэгдээгүй', cx + 24, 150 + 150, {size:22, color:C.muted});
+    list.forEach((p, i) => {
+      const y = 150 + 96 + i * rowH, df = p.gw - p.gl;
+      if(i) { x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(cx + 20, y); x.lineTo(cx + cw - 20, y); x.stroke(); }
+      rrect(x, cx + 22, y + 20, 44, 44, 14, i < 3 ? medal[i] : C.s2); stx(x, p.pos, cx + 44, y + 51, {size:22, weight:800, color:i < 3 ? '#2a2000' : C.text, align:'center'});
+      stx(x, p.name, cx + 82, y + 40, {size:25, weight:800, max:cw - 82 - 150});
+      rrect(x, cx + 82, y + 52, 10, 10, 3, p.team === 'A' ? C.a : C.b);
+      stx(x, `${teamName(d, p.team)} · ${p.played} тоглолт`, cx + 98, y + 63, {size:17, color:C.muted, max:cw - 98 - 150});
+      stx(x, p.wins, cx + cw - 112, y + 50, {size:30, weight:800, align:'center', font:SNAP.DISP});
+      stx(x, (df > 0 ? '+' : '') + df, cx + cw - 38, y + 48, {size:21, weight:700, color:C.muted, align:'center'});
+    });
+  });
+  const fy = 150 + 96 + rows * rowH + 20 + 50;
+  stx(x, 'Эрэмбэ: хожсон тоглолтын тоо, тэнцвэл гейм зөрүүгээр (зөрүү = хожсон гейм − алдсан гейм)', W / 2, fy, {size:19, color:C.muted, align:'center', max:W - 2 * P});
+  stx(x, `Шинэчилсэн: ${stamp}`, W / 2, fy + 30, {size:20, color:C.muted, align:'center'});
+  return {c, usedH:fy + 56};
+}
+
+function cropCanvas(src, usedH){   // илүү хоосон доод хэсгийг тайрна
+  const S = SNAP.S, h = Math.min(usedH * S, src.height); if(h >= src.height - 1) return src;
+  const o = document.createElement('canvas'); o.width = src.width; o.height = Math.ceil(h); o.getContext('2d').drawImage(src, 0, 0); return o;
+}
+async function buildSnapshots(d, opt){
+  try{ await Promise.all([document.fonts.load('800 40px Unbounded'), document.fonts.load('600 24px Manrope'), document.fonts.load('800 24px Manrope')]); }catch(e){}
+  const stamp = fmtStamp(new Date()), out = [], curN = d.cur >= 0 ? d.rounds[d.cur].n : -1;
+  const s1 = snapSummary(d, stamp); out.push({name:'tournament-1-summary.png', title:'1. Ерөнхий дүн, төрөл тус бүрийн дүн', c:cropCanvas(s1.c, s1.usedH)});
+  let rounds = d.rounds; if(opt.started) rounds = rounds.filter(r => r.matches.some(m => m && m.status !== PEND));
+  const pages = Math.ceil(rounds.length / SNAP.ROUNDS_PER_PAGE);
+  for(let i = 0; i < pages; i++){
+    const chunk = rounds.slice(i * SNAP.ROUNDS_PER_PAGE, (i + 1) * SNAP.ROUNDS_PER_PAGE), s2 = snapRounds(d, chunk, i + 1, pages, stamp, curN);
+    out.push({name:`tournament-2-rounds-${pad2(i + 1)}.png`, title:`2. Тойргийн дүн (${i + 1}/${pages}): ${chunk[0].n}–${chunk[chunk.length - 1].n}-р тойрог`, c:s2.c});
+  }
+  if(d.players.length){ const s3 = snapRank(d, stamp); out.push({name:'tournament-3-ranking.png', title:'3. Тамирчдын эрэмбэ', c:cropCanvas(s3.c, s3.usedH)}); }
+  for(const o of out){ o.blob = await new Promise(res => o.c.toBlob(res, 'image/png')); o.url = URL.createObjectURL(o.blob); o.w = o.c.width; o.h = o.c.height; }
+  return out;
+}
+async function openSnapshot(){
+  if(!state.data){ toast('Дүн ачаалагдаагүй байна.'); return; }
+  state.snap = {imgs:[], opt:{started:false}}; openModal('img'); renderSnapModal(true);
+  await genSnaps();
+}
+async function genSnaps(){
+  const S = state.snap; if(!S) return;
+  S.imgs.forEach(i => URL.revokeObjectURL(i.url)); S.imgs = []; renderSnapModal(true);
+  try{ const imgs = await buildSnapshots(state.data, S.opt); if(state.snap !== S){ imgs.forEach(i => URL.revokeObjectURL(i.url)); return; } S.imgs = imgs; }
+  catch(e){ S.err = e.message || String(e); }
+  renderSnapModal(false);
+}
+function renderSnapModal(loading){
+  const S = state.snap; if(!S) return;
+  const canShare = !!(navigator.canShare && S.imgs.length && navigator.canShare({files:S.imgs.map(i => new File([i.blob], i.name, {type:'image/png'}))}));
+  $('modalBody').innerHTML = `<h3>📷 Зураг болгож хадгалах</h3>
+    <p class="hint">Мэдээлэл жижиг харагдахгүйн тулд олон зурагт хуваасан: <b>1)</b> ерөнхий дүн, төрөл тус бүрийн дүн · <b>2)</b> тойргийн дүн (нэг зурагт ${SNAP.ROUNDS_PER_PAGE} тойрог) · <b>3)</b> тамирчдын эрэмбэ.</p>
+    <label class="chk"><input type="checkbox" id="imgOpt" ${S.opt.started ? 'checked' : ''}> Зөвхөн эхэлсэн, дууссан тойргийг оруулах</label>
+    ${S.err ? `<div class="msg err">${esc(S.err)}</div>` : ''}
+    <div id="imgList">${loading ? '<p class="hint">Зураг бэлдэж байна…</p>' : S.imgs.map((i, k) => `<div class="snap"><div class="st"><span>${esc(i.title)}</span><button class="btn" data-dl="${k}" type="button">⬇ Татах</button></div><div class="box"><img src="${i.url}" alt="${esc(i.title)}"></div></div>`).join('')}</div>
+    <div class="ed-foot"><span class="hint">${loading ? '' : S.imgs.length + ' зураг (PNG)'}</span><span><button class="btn pri" id="imgAll" type="button" ${loading ? 'disabled' : ''}>⬇ Бүгдийг татах</button> ${canShare ? '<button class="btn" id="imgShare" type="button">📤 Хуваалцах</button>' : ''}</span></div>`;
+}
+function downloadImg(i){ const a = document.createElement('a'); a.href = i.url; a.download = i.name; document.body.appendChild(a); a.click(); a.remove(); }
+async function downloadAll(){
+  const imgs = state.snap ? state.snap.imgs : [];
+  for(const i of imgs){ downloadImg(i); await new Promise(r => setTimeout(r, 450)); }
+  if(imgs.length > 1) toast('Хэд хэдэн файл татахыг браузер асууж магадгүй — «Зөвшөөрөх» дарна уу.');
+}
+
 /* ---------- Үйл явдлууд ---------- */
 document.addEventListener('click', e => {
   const t = e.target;
@@ -918,6 +1121,12 @@ document.addEventListener('click', e => {
     if(t.id === 'eddone'){ closeModal(); return; }
     return;
   }
+  if(state.modal === 'img'){
+    const dl = t.closest('[data-dl]'); if(dl){ downloadImg(state.snap.imgs[+dl.dataset.dl]); return; }
+    if(t.id === 'imgAll'){ downloadAll(); return; }
+    if(t.id === 'imgShare'){ navigator.share({files:state.snap.imgs.map(i => new File([i.blob], i.name, {type:'image/png'})), title:CONFIG.TITLE}).catch(() => {}); return; }
+    return;
+  }
   if(state.modal === 'login'){ if(t.id === 'lgo') doLogin(); return; }
   if(state.modal === 'admin'){ const b = t.closest('[data-act]'); if(b && !b.disabled) adminAct(b.dataset.act, b); return; }
   const card = t.closest && t.closest('.match[data-key]');
@@ -925,6 +1134,7 @@ document.addEventListener('click', e => {
   const ro = t.closest && t.closest('.match.readonly');
   if(ro && state.session && !state.modal) toast(`Энэ тоглолтыг ${ro.dataset.owner || 'өөр шүүгч'} шүүж байна. Зөвхөн тэр шүүгч эсвэл админ засна.`);
 });
+document.addEventListener('change', e => { if(state.modal === 'img' && e.target.id === 'imgOpt'){ state.snap.opt.started = e.target.checked; genSnaps(); } });
 document.addEventListener('input', e => {
   if(state.modal === 'admin' && e.target.dataset && e.target.dataset.g){ state.admin.text[e.target.dataset.g] = e.target.value; updateEst(); }
 });
@@ -932,6 +1142,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && state.modal === 'login' && e.target.id === 'lp') doLogin();
 });
 $('login').onclick = openLogin;
+$('imgbtn').onclick = openSnapshot;
 $('adminbtn').onclick = openAdmin;
 $('title').textContent = CONFIG.TITLE; document.title = CONFIG.TITLE + ' — Шууд дүн';
 $('refresh').onclick = refresh;
