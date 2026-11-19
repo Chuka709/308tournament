@@ -131,7 +131,6 @@ select{border:1px solid var(--line);background:var(--surface);padding:7px 12px;b
 .skel{height:14px;border-radius:8px;background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 1.4s infinite}
 @keyframes sh{to{background-position:-200% 0}}
 footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
-@media (min-width:821px){#schedule .sport-lbl{display:none}}
 @media (max-width:820px){
   .grid3,.boards{grid-template-columns:1fr}
   .round{grid-template-columns:1fr}.hdrrow{display:none}
@@ -184,6 +183,22 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 .snap .st{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-weight:800;font-size:14px}
 .snap .box{max-height:380px;overflow:auto;border-radius:10px;background:#fff}
 .snap img{display:block;width:100%;height:auto}
+#schedule.wide .hdrrow{display:none}
+.round.wide{grid-template-columns:110px 1fr}
+.cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-content:start}
+@media (min-width:821px){#schedule:not(.wide) .sport-lbl{display:none}}
+#pmatrix .mwrap,.mwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.matrix{border-collapse:collapse;width:100%;font-size:13px}
+.matrix th,.matrix td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.matrix th{background:var(--surface2);font-size:12px;position:sticky;top:0}
+.matrix td.pn2{text-align:left;font-weight:700}
+.matrix .na{color:var(--muted)}
+.matrix .mt{max-width:84px;overflow:hidden;text-overflow:ellipsis}
+.matrix .mall{font-weight:400;font-size:11px;color:var(--muted);display:inline-flex;gap:3px;align-items:center}
+.matrix input[type=checkbox]{width:18px;height:18px;accent-color:var(--text)}
+.stbl td input,.stbl td select{width:100%;min-width:60px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:14px}
+.stbl tr.dim td input,.stbl tr.dim td select{opacity:.55}
+.tdot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}.tdot.a{background:var(--a)}.tdot.b{background:var(--b)}
 mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2px;outline:1px solid var(--live)}
 .own{font-size:12px;color:var(--muted);font-weight:600}
 .match.readonly{cursor:not-allowed}
@@ -228,7 +243,7 @@ mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2
   <div class="how">
     <span>Хожсон тоглолт бүр <b>1 оноо</b></span>
     <span id="howT">Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно</span>
-    <span>Нэг тойрогт гурван төрлийн тоглолт зэрэг явагдана</span>
+    <span>Нэг тойрогт хэд хэдэн төрлийн тоглолт зэрэг явагдана</span>
   </div>
 
   <h2>Төрөл тус бүрийн дүн <span class="line"></span><span class="lg" id="legend"></span></h2>
@@ -255,19 +270,17 @@ mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2
 <script>
 /* ============ ТОХИРГОО — зөвхөн энд засна ============ */
 const CONFIG = {
-  SHEET_ID: "1LRr04SV5zJUn3wNLlRwuHKYTOTJP2eFLh-tcinHboM8",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
+  SHEET_ID: "11u2cyRwlmNB6TvRh5xmANP3WYnJTcoTbEZCVNaRbvaY",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
   REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
   TITLE: "Багийн тэмцээн", // хуудасны гарчиг
-  API_URL: "https://script.google.com/macros/s/AKfycby5N7wqlQbNGonLAiQEdrswjKhaBN_wt25ab1pglPGLrx1GuRKGKYftqTKKDIduP7U/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
-  TABS: { roster: "Тамирчид", darts: "Дартс", tennis: "Теннис", pool: "Биллиард" } // Sheets доторх табын нэрс
+  API_URL: "https://script.google.com/macros/s/AKfycbyVc9z2ZYYPenQbwQwTsgHXM81deWwYZA8rdlby6_59i_lWBYLCzj0KOAE8w9Nz2Uzp/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
+  TABS: { settings: "Тохиргоо", roster: "Тамирчид", matches: "Тоглолтууд" } // Sheets доторх табын нэрс
 };
 /* ======================================================= */
 
-const SPORTS = [
-  {key:'darts', label:'Дартс', icon:'🎯'},
-  {key:'tennis', label:'Ширээний теннис', icon:'🏓'},
-  {key:'pool', label:'Биллиард', icon:'🎱'}
-];
+let SPORTS = [];   // идэвхтэй төрлүүд (Sheet-ийн «Тохиргоо»-оос): {key, no, label, icon, gender, tM, tW}
+const SPORT_ICONS = [['дартс','🎯'],['теннис','🏓'],['биллиард','🎱'],['шатар','♟️'],['даам','⚫'],['лудо','🎲'],['боулинг','🎳'],['сагс','🏀'],['гар бөмбөг','🤾'],['волейбол','🏐'],['хөл бөмбөг','⚽'],['cs','🎮'],['тоглоом','🎮'],['сур','🏹'],['гүйлт','🏃'],['сэлэлт','🏊']];
+const iconFor = n => { const s = String(n).toLowerCase(); const f = SPORT_ICONS.find(([k]) => s.includes(k)); return f ? f[1] : '🏅'; };
 const DONE='Дууссан', LIVE='Тоглож байна', PEND='Хүлээгдэж байна', ERR='АЛДАА';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -288,41 +301,46 @@ async function gviz(tab, range){
 const txt = c => (c && c.v != null) ? String(c.v) : '';
 const num = c => (c && c.v != null && c.v !== '') ? Number(c.v) : null;
 
+function parseData(settings, roster, matchRows){
+  const teamA = txt(settings[0]?.[1]) || 'А баг', teamB = txt(settings[1]?.[1]) || 'Б баг';
+  const locked = txt(settings[2]?.[1]).includes('ТҮГЖИГДСЭН');
+  const sports = [];
+  settings.slice(6).forEach((r, i) => {
+    const name = txt(r[1]).trim();
+    if(name) sports.push({key:i + 1, no:i + 1, label:name, icon:iconFor(name), gender:txt(r[2]) || 'Хоёулаа', tM:num(r[3]) ?? 3, tW:num(r[4]) ?? 2});
+  });
+  const players = roster.slice(5).filter(r => txt(r[13])).map(r => ({
+    code:txt(r[13]), team:txt(r[0]), gender:txt(r[1]), name:txt(r[2]) || txt(r[13]),
+    sports:[1, 2, 3, 4, 5, 6, 7, 8].filter(s => txt(r[2 + s]) !== '')
+  }));
+  const matches = matchRows.filter(r => txt(r[2])).map(r => ({
+    round:num(r[0]), sport:num(r[15]), aCode:txt(r[2]), aName:txt(r[3]), bCode:txt(r[4]), bName:txt(r[5]),
+    fa:num(r[6]), fb:num(r[7]), status:txt(r[8]) || PEND, winTeam:txt(r[9]), winCode:txt(r[10]),
+    gender:txt(r[11]), target:num(r[12]), ownerName:txt(r[13]), ownerId:txt(r[14])
+  }));
+  return {teamA, teamB, locked, sports, players, matches};
+}
 async function loadFromSheet(){
-  const T = CONFIG.TABS;
-  let roster, sp;
-  let apiErr = null;
+  let settings, roster, matchRows, apiErr = null;
   if(CONFIG.API_URL){
     try{
       const r = await Api.call('getData');
-      if(!r.ok) throw new Error(r.error === 'AUTH' || r.error === 'UNKNOWN' ? 'Apps Script-ийн ХУУЧИН хувилбар байршсан байна (getData дэмжихгүй). Deploy → Manage deployments → ✏ → Version: New version → Deploy хийнэ үү.' : (r.message || 'Серверээс өгөгдөл авч чадсангүй.'));
+      if(!r.ok) throw new Error(r.error === 'AUTH' || r.error === 'UNKNOWN' ? 'Apps Script-ийн ХУУЧИН хувилбар байршсан байна. Code.gs-ийн шинэ хувилбарыг хуулж, Deploy → Manage deployments → ✏ → New version хийнэ үү.' : (r.message || 'Серверээс өгөгдөл авч чадсангүй.'));
+      if(!r.data || !r.data.settings) throw new Error('Apps Script-ийн хуучин хувилбар (v1) байршсан байна. Code.gs v2.0-г хуулж, New version болгон байршуулна уу.');
       const cells = rows => (rows || []).map(row => row.map(v => ({v, f:null})));
-      roster = cells(r.data.roster); sp = [cells(r.data.darts), cells(r.data.tennis), cells(r.data.pool)];
+      settings = cells(r.data.settings); roster = cells(r.data.roster); matchRows = cells(r.data.matches);
     }catch(e){ apiErr = e; if(!CONFIG.SHEET_ID) throw e; }
   }
-  if(!roster){
-    [roster, ...sp] = await Promise.all([
-      gviz(T.roster, 'A3:G47'), gviz(T.darts, 'A5:P204'), gviz(T.tennis, 'A5:P204'), gviz(T.pool, 'A5:P204')
-    ]).catch(e => { throw apiErr || e; });
+  if(!settings){
+    const T = CONFIG.TABS;
+    [settings, roster, matchRows] = await Promise.all([gviz(T.settings, 'A3:H16'), gviz(T.roster, 'A3:O47'), gviz(T.matches, 'A5:R504')]).catch(e => { throw apiErr || e; });
   }
-  const teamA = txt(roster[0]?.[1]) || 'А баг', teamB = txt(roster[1]?.[1]) || 'Б баг';
-  const players = roster.slice(5).filter(r => txt(r[5])).map(r => ({
-    code: txt(r[5]), team: txt(r[0]), gender: txt(r[1]), name: txt(r[2]) || txt(r[5])
-  }));
-  const matches = [];
-  SPORTS.forEach((s, i) => sp[i].forEach(r => {
-    if(!txt(r[1])) return;
-    matches.push({
-      sport:s.key, round:num(r[0]), aCode:txt(r[1]), aName:txt(r[2]), bCode:txt(r[3]), bName:txt(r[4]),
-      fa:num(r[5]), fb:num(r[6]), status:txt(r[7]) || PEND, winTeam:txt(r[8]), winCode:txt(r[9]),
-      gender:txt(r[10]), target:num(r[11]), ownerName:txt(r[14]), ownerId:txt(r[15])
-    });
-  }));
-  return {teamA, teamB, players, matches, locked: txt(roster[0]?.[6]).includes('ТҮГЖИГДСЭН'), tM: num(roster[0]?.[4]), tW: num(roster[1]?.[4])};
+  return parseData(settings, roster, matchRows);
 }
 
 /* ---------- Тооцоолол ---------- */
 function compute(raw){
+  SPORTS = raw.sports || [];
   const total = raw.matches.length;
   const done = raw.matches.filter(m => m.status === DONE);
   const errors = raw.matches.filter(m => m.status === ERR).length;
@@ -332,7 +350,7 @@ function compute(raw){
   done.forEach(m => {
     if(m.winTeam in pts) pts[m.winTeam]++;
     games.A += m.fa||0; games.B += m.fb||0;
-    if(bySport[m.sport][m.gender] && m.winTeam in pts) bySport[m.sport][m.gender][m.winTeam]++;
+    if(bySport[m.sport] && bySport[m.sport][m.gender] && m.winTeam in pts) bySport[m.sport][m.gender][m.winTeam]++;
   });
   const st = {};
   raw.players.forEach(p => st[p.code] = {...p, played:0, wins:0, gw:0, gl:0});
@@ -350,49 +368,46 @@ function compute(raw){
     const ms = SPORTS.map(s => raw.matches.find(m => m.sport === s.key && m.round === n) || null);
     return {n, matches: ms, complete: ms.filter(Boolean).every(m => m.status === DONE)};
   });
-  const tgt = g => (raw.matches.find(m => m.gender === g && m.target) || {}).target || null;
   const cur = rounds.findIndex(r => !r.complete);
-  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st, tM: raw.tM ?? tgt('Эрэгтэй'), tW: raw.tW ?? tgt('Эмэгтэй'), scored: raw.matches.filter(m => m.fa != null || m.fb != null).length};
+  return {...raw, total, doneCount: done.length, errors, pts, games, bySport, men, women, rounds, cur, st,
+    scored: raw.matches.filter(m => m.fa != null || m.fb != null).length};
 }
 
-/* ---------- Хуваарь үүсгэгч (Sheets-ийн томьёотой ижил зарчим; DEMO-д ашиглана) ---------- */
-function genSchedule(c){
-  const Nm = Math.max(c.nAm, c.nBm), Nw = Math.max(c.nAw, c.nBw);
-  const Qm = Math.ceil(Nm / 3), Qw = Math.ceil(Nw / 3), L = 3 * Math.max(Qm, Qw, 1);
-  const mod = (a, n) => ((a % n) + n) % n, cand = [];
-  [['Эрэгтэй', c.nAm, c.nBm, Nm, Qm, 0, 'M'], ['Эмэгтэй', c.nAw, c.nBw, Nw, Qw, 1, 'W']].forEach(([g, nA, nB, N, Q, gi, l]) => {
-    for(let i = 1; i <= nA; i++) for(let j = 1; j <= nB; j++){
-      const k = mod(j - i, N);
-      for(let s = 0; s < 3; s++) cand.push({gender:g, i, j, s, letter:l, key:(k * 2 + gi) * L + mod(s - i, 3) * Q + Math.floor((i - 1) / 3) + 1});
-    }
+/* ---------- Хуваарь үүсгэгч (Sheets-ийн томьёотой яг ижил зарчим; DEMO-д ашиглана) ---------- */
+function plays(p, s){ return (s.gender === 'Хоёулаа' || s.gender === p.gender) && (!p.sports || p.sports.length === 0 || p.sports.includes(s.no)); }
+function countMatches(sports, players){
+  const per = {}; let total = 0;
+  sports.filter(s => s.name || s.label).forEach(s => {
+    const sp = {no:s.no, gender:s.gender};
+    let c = 0;
+    ['Эрэгтэй', 'Эмэгтэй'].forEach(g => {
+      const n = team => players.filter(p => p.team === team && p.gender === g && plays(p, sp)).length;
+      if(sp.gender === 'Хоёулаа' || sp.gender === g) c += n('A') * n('B');
+    });
+    per[s.no] = c; total += c;
   });
-  const keys = [...new Set(cand.map(x => x.key))].sort((a, b) => a - b);
-  cand.forEach(x => x.round = keys.indexOf(x.key) + 1);
-  return cand;
+  return {per, total};
 }
-
-/* ---------- DEMO өгөгдөл (баг бүрийн тоо ялгаатай байж болохыг харуулна) ---------- */
-function demoRaw(){
-  const cfg = {nAm:4, nBm:3, nAw:2, nBw:3};
-  const nm = {AM:['Бат','Дорж','Ганаа','Хүрэл'], BM:['Тэмүүлэн','Эрдэнэ','Саруул'], AW:['Оюна','Номин'], BW:['Цэцэг','Болор','Сарнай']};
-  const players = [];
-  [['A','Эрэгтэй','M',nm.AM],['B','Эрэгтэй','M',nm.BM],['A','Эмэгтэй','W',nm.AW],['B','Эмэгтэй','W',nm.BW]].forEach(([t, g, l, list]) =>
-    list.forEach((n, i) => players.push({code:`${t}-${l}${i+1}`, team:t, gender:g, name:n})));
-  const name = c => players.find(p => p.code === c).name;
-  const sched = genSchedule(cfg).sort((a, b) => a.round - b.round || a.s - b.s);
-  const maxDone = 10; let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-  const matches = sched.map(x => {
-    const a = `A-${x.letter}${x.i}`, b = `B-${x.letter}${x.j}`, w = x.gender === 'Эмэгтэй', target = w ? 2 : 3;
-    const m = {sport:SPORTS[x.s].key, round:x.round, aCode:a, bCode:b, aName:name(a), bName:name(b), fa:null, fb:null,
-      status:PEND, winTeam:'', winCode:'', gender:x.gender, target};
-    if(x.round <= maxDone){
-      const aWins = rnd() < .5, loser = Math.floor(rnd() * target);
-      m.fa = aWins ? target : loser; m.fb = aWins ? loser : target; m.status = DONE;
-      m.winTeam = aWins ? 'A' : 'B'; m.winCode = aWins ? a : b;
-    } else if(x.round === maxDone + 1){ m.fa = 1; m.fb = 1; m.status = LIVE; }
-    return m;
-  });
-  return {teamA:'Ирвэс', teamB:'Бар', players, matches};
+function genMatches(sports, players){
+  const act = sports.filter(s => (s.name || s.label)).map((s, i) => ({no:s.no, name:s.name || s.label, gender:s.gender, tM:s.tM, tW:s.tW, ord:i}));
+  const K = Math.max(act.length, 1), cnt = {};
+  const pl = players.map(p => { const k = p.team + p.gender; cnt[k] = (cnt[k] || 0) + 1; return {...p, ord:cnt[k], code:`${p.team}-${p.gender === 'Эрэгтэй' ? 'M' : 'W'}${cnt[k]}`}; });
+  const n = (t, g) => cnt[t + g] || 0;
+  const Nm = Math.max(n('A', 'Эрэгтэй'), n('B', 'Эрэгтэй')), Nw = Math.max(n('A', 'Эмэгтэй'), n('B', 'Эмэгтэй'));
+  const Qm = Math.ceil(Nm / K), Qw = Math.ceil(Nw / K), L = K * Math.max(Qm, Qw, 1), mod = (a, b) => ((a % b) + b) % b;
+  const cands = [];
+  act.forEach(s => [['Эрэгтэй', Nm, Qm, 0], ['Эмэгтэй', Nw, Qw, 1]].forEach(([g, N, Q, gi]) => {
+    if(s.gender !== 'Хоёулаа' && s.gender !== g) return;
+    pl.filter(p => p.team === 'A' && p.gender === g && plays(p, s)).forEach(a => pl.filter(p => p.team === 'B' && p.gender === g && plays(p, s)).forEach(b => {
+      const k = mod(b.ord - a.ord, N), key = (k * 2 + gi) * L + mod(s.ord - a.ord, K) * Q + Math.floor((a.ord - 1) / K) + 1;
+      cands.push({s, g, a, b, key, sort:key * 10 + s.no});
+    }));
+  }));
+  const keys = [...new Set(cands.map(c => c.key))].sort((x, y) => x - y);
+  cands.sort((x, y) => x.sort - y.sort);
+  const matches = cands.map(c => ({sport:c.s.no, round:keys.indexOf(c.key) + 1, aCode:c.a.code, bCode:c.b.code, aName:c.a.name, bName:c.b.name,
+    fa:null, fb:null, status:PEND, winTeam:'', winCode:'', gender:c.g, target:c.g === 'Эмэгтэй' ? c.s.tW : c.s.tM, ownerName:'', ownerId:''}));
+  return {players:pl, matches};
 }
 
 /* ---------- Тоглолтын төлөв (Sheets-ийн томьёотой ижил) ---------- */
@@ -413,15 +428,30 @@ function derive(m){
 const DemoApi = {
   db: null, tokens: {},
   init(){
-    const raw = demoRaw();
-    this.db = {teamA:raw.teamA, teamB:raw.teamB, tM:3, tW:2, locked:false, players:raw.players.map(p => ({...p})),
-      matches:raw.matches.map(m => ({...m, ownerId:m.fa != null ? (m.round % 2 ? 'r1' : 'r2') : '', ownerName:m.fa != null ? (m.round % 2 ? 'Шүүгч Болд' : 'Шүүгч Сарнай') : ''})), adminPin:'1234',
+    const sports = [['Лудо', 2, 2], ['Шатар', 1, 1], ['Даам', 1, 1], ['Боулинг', 1, 1], ['Дартс', 3, 2]].map(([name, tM, tW], i) => ({no:i + 1, name, gender:'Хоёулаа', tM, tW}));
+    while(sports.length < 8) sports.push({no:sports.length + 1, name:'', gender:'Хоёулаа', tM:3, tW:2});
+    const P = (team, gender, name, sp) => ({team, gender, name, sports:sp});
+    const players = [P('A','Эрэгтэй','Бат',[]), P('A','Эрэгтэй','Дорж',[1,2,5]), P('A','Эрэгтэй','Ганаа',[2,3,4]), P('A','Эрэгтэй','Хүрэл',[1,4,5]),
+      P('B','Эрэгтэй','Тэмүүлэн',[]), P('B','Эрэгтэй','Эрдэнэ',[1,2,3]), P('B','Эрэгтэй','Саруул',[2,4,5]),
+      P('A','Эмэгтэй','Оюна',[]), P('A','Эмэгтэй','Номин',[1,3,5]), P('B','Эмэгтэй','Цэцэг',[1,2,4,5]), P('B','Эмэгтэй','Болор',[1,3,5]), P('B','Эмэгтэй','Сарнай',[2,3,4])];
+    this.db = {teamA:'Ирвэс', teamB:'Бар', locked:false, sports, players:[], matches:[], adminPin:'1234',
       referees:[{id:'r1', name:'Шүүгч Болд', pin:'1111'}, {id:'r2', name:'Шүүгч Сарнай', pin:'2222'}], log:[]};
+    this.rebuild(players);
+    let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    this.db.matches.forEach(m => {
+      if(m.round <= 10){
+        const t = m.target, aw = rnd() < .5, lo = Math.floor(rnd() * t);
+        m.fa = aw ? t : lo; m.fb = aw ? lo : t; derive(m); m.ownerId = m.round % 2 ? 'r1' : 'r2'; m.ownerName = m.round % 2 ? 'Шүүгч Болд' : 'Шүүгч Сарнай';
+      } else if(m.round === 11){ m.fa = 1; m.fb = 0; if(m.target === 1){ m.fa = null; m.fb = null; } derive(m); if(m.fa != null){ m.ownerId = 'r1'; m.ownerName = 'Шүүгч Болд'; } }
+    });
   },
+  rebuild(players){ const g = genMatches(this.db.sports, players); this.db.players = g.players; this.db.matches = g.matches; },
   raw(){
     if(!this.db) this.init();
     const d = this.db;
-    return {teamA:d.teamA, teamB:d.teamB, players:d.players.map(p => ({...p})), matches:d.matches.map(m => ({...m})), locked:d.locked, tM:d.tM, tW:d.tW};
+    return {teamA:d.teamA, teamB:d.teamB, locked:d.locked,
+      sports:d.sports.filter(s => s.name).map(s => ({key:s.no, no:s.no, label:s.name, icon:iconFor(s.name), gender:s.gender, tM:s.tM, tW:s.tW})),
+      players:d.players.map(p => ({code:p.code, team:p.team, gender:p.gender, name:p.name, sports:p.sports.slice()})), matches:d.matches.map(m => ({...m}))};
   },
   async call(a, p){ if(!this.db) this.init(); await new Promise(r => setTimeout(r, 120)); return this.handle(a, p); },
   handle(a, p){
@@ -441,7 +471,7 @@ const DemoApi = {
     if(a === 'logout'){ delete this.tokens[p.token]; return ok({}); }
     const scored = () => d.matches.filter(m => m.fa != null || m.fb != null).length;
     if(a === 'saveScore' || a === 'clearScore'){
-      const m = d.matches.find(x => x.sport === p.sport && x.aCode === p.aCode && x.bCode === p.bCode);
+      const m = d.matches.find(x => x.sport === Number(p.sport) && x.aCode === p.aCode && x.bCode === p.bCode);
       if(!m) return bad('NOT_FOUND', 'Тоглолт олдсонгүй. Хуудсыг шинэчилнэ үү.');
       if(sess.role !== 'admin' && m.ownerId && m.ownerId !== sess.who) return bad('NOT_OWNER', `Энэ тоглолтын оноог ${m.ownerName} оруулсан. Зөвхөн тэр шүүгч эсвэл админ засна.`, {owner:m.ownerName});
       if(p.prev && ((p.prev.fa ?? null) !== (m.fa ?? null) || (p.prev.fb ?? null) !== (m.fb ?? null))) return bad('CONFLICT', 'Энэ тоглолтын оноог өөр хүн өөрчилсөн байна.', {fa:m.fa ?? null, fb:m.fb ?? null});
@@ -454,21 +484,40 @@ const DemoApi = {
           if(fa === t && fb === t) return bad('BAD_SCORE', `Хоёр тал зэрэг ${t} хожиж болохгүй.`);
         }
       }
-      this.log(sess.role, sess.name, a, `${p.sport} ${p.aCode}–${p.bCode}: ${m.fa ?? '·'}:${m.fb ?? '·'} → ${fa ?? '·'}:${fb ?? '·'}`);
+      this.log(sess.role, sess.name, a, `Төрөл ${p.sport} ${p.aCode}–${p.bCode}: ${m.fa ?? '·'}:${m.fb ?? '·'} → ${fa ?? '·'}:${fb ?? '·'}`);
       m.fa = fa; m.fb = fb; derive(m);
       if(fa === null){ m.ownerId = ''; m.ownerName = ''; } else if(!m.ownerId){ m.ownerId = sess.who; m.ownerName = sess.name; }
       return ok({fa, fb, target:t});
     }
     if(sess.role !== 'admin') return bad('FORBIDDEN', 'Энэ үйлдлийг зөвхөн админ хийнэ.');
     if(a === 'saveSettings'){
-      const teamA = String(p.teamA || '').trim(), teamB = String(p.teamB || '').trim(), tm = +p.targetM, tw = +p.targetW;
+      const teamA = String(p.teamA || '').trim(), teamB = String(p.teamB || '').trim();
       if(!teamA || !teamB || teamA.length > 40 || teamB.length > 40) return bad('BAD_INPUT', 'Багийн нэр 1–40 тэмдэгт байх ёстой.');
       if(teamA.toLowerCase() === teamB.toLowerCase()) return bad('BAD_INPUT', 'Хоёр багийн нэр ялгаатай байх ёстой.');
-      if(!Number.isInteger(tm) || !Number.isInteger(tw) || tm < 1 || tm > 9 || tw < 1 || tw > 9) return bad('BAD_INPUT', 'Хожих хэмжээ 1–9 хоорондын бүхэл тоо байх ёстой.');
-      if((tm !== d.tM || tw !== d.tW) && scored() > 0 && !p.force) return bad('TARGET_HAS_SCORES', 'Оноо оруулсан байхад хожих хэмжээг өөрчлөх нь тоглолтын төлөвийг өөрчилнө. Баталгаажуулж дахин илгээнэ үү.');
-      d.teamA = teamA; d.teamB = teamB; d.tM = tm; d.tW = tw;
-      d.matches.forEach(m => { m.target = m.gender === 'Эмэгтэй' ? tw : tm; derive(m); });
-      this.log(sess.role, sess.name, 'saveSettings', `${teamA} / ${teamB}, ${tm}/${tw}`); return ok({});
+      const list = p.sports || [], next = [], seen = {};
+      if(list.length > 8) return bad('BAD_INPUT', 'Төрлийн жагсаалт буруу байна (дээд тал 8).');
+      for(let i = 0; i < 8; i++){
+        const s = list[i] || {}, name = String(s.name || '').trim(), gender = ['Хоёулаа', 'Эрэгтэй', 'Эмэгтэй'].includes(s.gender) ? s.gender : 'Хоёулаа', tm = Number(s.targetM), tw = Number(s.targetW);
+        if(name){
+          if(name.length > 30) return bad('BAD_INPUT', `${i + 1}-р төрлийн нэр 30 тэмдэгтээс ихгүй байх ёстой.`);
+          if(seen[name.toLowerCase()]) return bad('BAD_INPUT', 'Төрлийн нэр давхардсан байна: ' + name);
+          seen[name.toLowerCase()] = true;
+          const okT = x => Number.isInteger(x) && x >= 1 && x <= 9;
+          if(!okT(tm) || !okT(tw)) return bad('BAD_INPUT', `${name}: хожих хэмжээ 1–9 хоорондын бүхэл тоо байх ёстой.`);
+        }
+        next.push({no:i + 1, name, gender, tM:name ? tm : 3, tW:name ? tw : 2});
+      }
+      let structural = false, targetChanged = false;
+      next.forEach((n, i) => { const o = d.sports[i]; if(!!o.name !== !!n.name || (n.name && o.gender !== n.gender)) structural = true; if(n.name && (o.tM !== n.tM || o.tW !== n.tW)) targetChanged = true; });
+      if(structural && (d.locked || scored())) return bad('SETTINGS_LOCKED', d.locked ? 'Хуваарь түгжигдсэн тул төрөл нэмэх, хасах, хэн тоглохыг өөрчлөх боломжгүй. Эхлээд түгжээг нээнэ үү.' : 'Оноо оруулсан тул төрөл нэмэх, хасах, хэн тоглохыг өөрчлөх боломжгүй. Эхлээд бүх оноог цэвэрлэнэ үү.');
+      if(targetChanged && scored() && !p.force) return bad('TARGET_HAS_SCORES', 'Оноо оруулсан байхад хожих хэмжээг өөрчлөх нь тоглолтын төлөвийг өөрчилнө. Баталгаажуулж дахин илгээнэ үү.');
+      const cm = countMatches(next, d.players);
+      if(cm.total > 500) return bad('TOO_MANY', `Нийт тоглолт ${cm.total} болж дээд хязгаар (500)-аас хэтэрнэ. Оролцогч, төрлийг цөөлнө үү.`);
+      d.teamA = teamA; d.teamB = teamB; d.sports = next;
+      if(structural) this.rebuild(d.players.map(x => ({team:x.team, gender:x.gender, name:x.name, sports:x.sports})));
+      else d.matches.forEach(m => { const s = next[m.sport - 1]; m.target = m.gender === 'Эмэгтэй' ? s.tW : s.tM; derive(m); });
+      this.log(sess.role, sess.name, 'saveSettings', `${teamA} / ${teamB}; төрөл: ${next.filter(n => n.name).map(n => n.name).join(', ')}`);
+      return ok({matches:cm.total, perSport:cm.per});
     }
     if(a === 'saveRoster'){
       if(d.locked) return bad('ROSTER_LOCKED', 'Хуваарь түгжигдсэн байна. Эхлээд түгжээг нээнэ үү.');
@@ -482,16 +531,12 @@ const DemoApi = {
         if(!name || name.length > 40) return bad('BAD_INPUT', `${i + 1}-р тамирчины нэр 1–40 тэмдэгт байх ёстой.`);
         const k = q.team + q.gender; counts[k] = (counts[k] || 0) + 1;
         if(counts[k] > 10) return bad('BAD_INPUT', 'Баг, хүйс бүрт дээд тал нь 10 тамирчин байж болно.');
-        players.push({code:`${q.team}-${q.gender === 'Эрэгтэй' ? 'M' : 'W'}${counts[k]}`, team:q.team, gender:q.gender, name});
+        players.push({team:q.team, gender:q.gender, name, sports:(q.sports || []).map(Number).filter(n => n >= 1 && n <= 8)});
       }
-      const n = (t, g) => counts[t + g] || 0, nameOf = c => players.find(x => x.code === c).name;
-      const cands = genSchedule({nAm:n('A','Эрэгтэй'), nBm:n('B','Эрэгтэй'), nAw:n('A','Эмэгтэй'), nBw:n('B','Эмэгтэй')}).sort((x, y) => x.round - y.round || x.s - y.s);
-      d.players = players;
-      d.matches = cands.map(x => {
-        const ac = `A-${x.letter}${x.i}`, bc = `B-${x.letter}${x.j}`;
-        return derive({sport:SPORTS[x.s].key, round:x.round, aCode:ac, bCode:bc, aName:nameOf(ac), bName:nameOf(bc), fa:null, fb:null, gender:x.gender, target:x.gender === 'Эмэгтэй' ? d.tW : d.tM});
-      });
-      this.log(sess.role, sess.name, 'saveRoster', `${players.length} тамирчин`); return ok({count:players.length});
+      const cm = countMatches(d.sports, players);
+      if(cm.total > 500) return bad('TOO_MANY', `Нийт тоглолт ${cm.total} болж дээд хязгаар (500)-аас хэтэрнэ. Оролцогчдыг цөөлнө үү.`);
+      this.rebuild(players); this.log(sess.role, sess.name, 'saveRoster', `${players.length} тамирчин; тоглолт ${cm.total}`);
+      return ok({count:players.length, matches:cm.total, perSport:cm.per});
     }
     if(a === 'setLock'){
       if(p.locked && !d.players.length) return bad('NO_PLAYERS', 'Тамирчин бүртгэгдээгүй байна.');
@@ -537,7 +582,7 @@ function hl(name, q){
 function matchHTML(m, ph, q){
   if(!m || ph) return `<div class="match ph" aria-hidden="true">—</div>`;
   const cls = m.status === DONE ? 'done' : m.status === LIVE ? 'live' : m.status === ERR ? 'err' : 'pend';
-  const sp = SPORTS.find(s => s.key === m.sport), g = m.gender === 'Эмэгтэй';
+  const sp = SPORTS.find(s => s.key === m.sport) || {icon:'🏅', label:'Төрөл'}, g = m.gender === 'Эмэгтэй';
   const aw = m.status === DONE && m.winTeam === 'A', bw = m.status === DONE && m.winTeam === 'B';
   const sc = m.status === PEND ? 'vs' : `${m.fa ?? 0} : ${m.fb ?? 0}`;
   const ce = canEditMatch(m), ro = state.session && !ce;
@@ -567,9 +612,12 @@ function renderHero(d){
 
 function renderEvents(d){
   $('legend').innerHTML = `<span><i class="ia"></i>${esc(d.teamA)}</span><span><i class="ib"></i>${esc(d.teamB)}</span>`;
+  if(!SPORTS.length){ $('events').innerHTML = '<div class="card empty">Төрөл тохируулаагүй байна. Админ «⚙ Тохиргоо» хэсгээс төрөл нэмнэ.</div>'; return; }
   $('events').innerHTML = SPORTS.map(s => {
-    const row = (g, lab) => `<div class="row"><span>${lab}</span><span class="sc2" aria-label="${esc(d.teamA)} ${d.bySport[s.key][g].A}, ${esc(d.teamB)} ${d.bySport[s.key][g].B}"><span class="ca">${d.bySport[s.key][g].A}</span><span class="x">:</span><span class="cb">${d.bySport[s.key][g].B}</span></span></div>`;
-    return `<div class="card ev"><div class="t"><span>${s.icon}</span>${esc(s.label)}</div>${row('Эрэгтэй', '♂ Эрэгтэй')}${row('Эмэгтэй', '♀ Эмэгтэй')}</div>`;
+    const bs = d.bySport[s.key];
+    const row = (g, lab) => `<div class="row"><span>${lab}</span><span class="sc2" aria-label="${esc(d.teamA)} ${bs[g].A}, ${esc(d.teamB)} ${bs[g].B}"><span class="ca">${bs[g].A}</span><span class="x">:</span><span class="cb">${bs[g].B}</span></span></div>`;
+    const rows = [s.gender !== 'Эмэгтэй' && row('Эрэгтэй', '♂ Эрэгтэй'), s.gender !== 'Эрэгтэй' && row('Эмэгтэй', '♀ Эмэгтэй')].filter(Boolean).join('');
+    return `<div class="card ev"><div class="t"><span>${s.icon}</span>${esc(s.label)}</div>${rows}</div>`;
   }).join('');
 }
 
@@ -583,9 +631,9 @@ function renderNow(d){
 }
 
 function renderFilters(d){
-  const key = JSON.stringify([d.teamA, d.teamB, d.players.map(p => p.name), state.sport, state.player, state.hideDone]);
+  const key = JSON.stringify([d.teamA, d.teamB, d.players.map(p => p.name), SPORTS.map(s => s.label), state.sport, state.player, state.hideDone]);
   if(key === state.fkey) return; state.fkey = key;
-  const f = [{k:'all', l:'Бүгд'}, ...SPORTS.map(s => ({k:s.key, l:s.icon + ' ' + s.label}))];
+  const f = [{k:'all', l:'Бүгд'}, ...SPORTS.map(s => ({k:String(s.key), l:s.icon + ' ' + s.label}))];
   const opts = ['<option value="">Бүгд</option>'].concat(
     d.players.map(p => `<option value="${esc(p.code)}" ${state.player === p.code ? 'selected' : ''}>${esc(p.name)} (${esc(teamName(d, p.team))})</option>`));
   $('filters').innerHTML =
@@ -617,19 +665,22 @@ function renderSchedule(d){
   const q = state.q, activeF = !!(state.player || q);
   const hit = m => !q || `${m.aName} ${m.bName}`.toLowerCase().includes(q);
   const keep = m => !!m && (!state.player || mine(m)) && hit(m);
-  const vis = SPORTS.filter(s => state.sport === 'all' || state.sport === s.key);
+  const vis = SPORTS.filter(s => state.sport === 'all' || state.sport === String(s.key));
+  const wide = vis.length > 3;
   const rows = d.rounds.map((r, i) => ({r, i}))
     .filter(({r}) => !(state.hideDone && r.complete))
+    .filter(({r}) => vis.length === SPORTS.length || SPORTS.some((s, si) => vis.includes(s) && r.matches[si]))
     .filter(({r}) => !activeF || SPORTS.some((s, si) => vis.includes(s) && keep(r.matches[si])));
   const found = rows.reduce((n, {r}) => n + SPORTS.filter((s, si) => vis.includes(s) && keep(r.matches[si])).length, 0);
   $('sres').textContent = activeF ? (found ? `${found} тоглолт олдлоо` : 'Тоглолт олдсонгүй') : '';
   if(!rows.length){ $('schedule').innerHTML = '<div class="empty">Тохирох тоглолт алга. Хайлт, шүүлтүүрээ өөрчилнө үү.</div>'; return; }
   $('schedule').style.setProperty('--n', vis.length);
-  $('schedule').innerHTML =
-    `<div class="hdrrow"><span>Тойрог</span>${vis.map(s => `<span>${s.icon} ${esc(s.label)}</span>`).join('')}</div>` +
-    rows.map(({r, i}) => `<div class="round ${i === d.cur ? 'cur' : ''}">
-      <div class="rhead"><div class="rn">${r.n}-р тойрог</div>${i === d.cur ? '<span class="now">ОДОО</span>' : ''}${r.complete ? '<span class="chip done">✓ Дууссан</span>' : ''}</div>
-      ${SPORTS.map((s, si) => vis.includes(s) ? matchHTML(r.matches[si], activeF && !keep(r.matches[si]), q) : '').join('')}</div>`).join('');
+  $('schedule').classList.toggle('wide', wide);
+  const roundHead = (r, i) => `<div class="rhead"><div class="rn">${r.n}-р тойрог</div>${i === d.cur ? '<span class="now">ОДОО</span>' : ''}${r.complete ? '<span class="chip done">✓ Дууссан</span>' : ''}</div>`;
+  $('schedule').innerHTML = wide
+    ? rows.map(({r, i}) => `<div class="round wide ${i === d.cur ? 'cur' : ''}">${roundHead(r, i)}<div class="cells">${SPORTS.map((s, si) => (vis.includes(s) && r.matches[si] && (!activeF || keep(r.matches[si]))) ? matchHTML(r.matches[si], false, q) : '').join('')}</div></div>`).join('')
+    : `<div class="hdrrow"><span>Тойрог</span>${vis.map(s => `<span>${s.icon} ${esc(s.label)}</span>`).join('')}</div>` +
+      rows.map(({r, i}) => `<div class="round ${i === d.cur ? 'cur' : ''}">${roundHead(r, i)}${SPORTS.map((s, si) => vis.includes(s) ? matchHTML(r.matches[si], activeF && !keep(r.matches[si]), q) : '').join('')}</div>`).join('');
 }
 
 function renderBoards(d){
@@ -649,8 +700,10 @@ function renderBanners(){
 
 function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); syncReset(); }
 function renderHow(d){
-  const p = [d.tM && `эрэгтэй — түрүүлж <b>${d.tM}</b>`, d.tW && `эмэгтэй — түрүүлж <b>${d.tW}</b>`].filter(Boolean);
-  if(p.length) $('howT').innerHTML = p.join(', ').replace(/^./, c => c.toUpperCase()) + ' гейм хожно';
+  const ms = SPORTS.filter(s => s.gender !== 'Эмэгтэй'), ws = SPORTS.filter(s => s.gender !== 'Эрэгтэй');
+  const same = (arr, k) => arr.length && arr.every(s => s[k] === arr[0][k]) ? arr[0][k] : null;
+  const m = same(ms, 'tM'), w = same(ws, 'tW');
+  $('howT').innerHTML = (m && w) ? `Эрэгтэй — түрүүлж <b>${m}</b>, эмэгтэй — түрүүлж <b>${w}</b> гейм хожно` : 'Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно (төрөл бүрт өөр байж болно)';
 }
 function renderAll(){
   const d = state.data; if(!d) return;
@@ -818,36 +871,71 @@ async function doSave(key){
 }
 
 /* ---------- Админ ---------- */
-const NO_DATA = {teamA:'А баг', teamB:'Б баг', players:[], tM:3, tW:2, locked:false, scored:0};
+const NO_DATA = {teamA:'А баг', teamB:'Б баг', players:[], locked:false, scored:0, sports:[]};
 const GROUPS = [['AM','A','Эрэгтэй'], ['BM','B','Эрэгтэй'], ['AW','A','Эмэгтэй'], ['BW','B','Эмэгтэй']];
 const lines = t => (t || '').split('\n').map(x => x.trim()).filter(Boolean);
+const pkey = (k, name) => `${k}|${name}`;
 function openAdmin(){
-  const d = state.data || NO_DATA, text = {AM:[], BM:[], AW:[], BW:[]};
-  d.players.forEach(p => { const k = p.team + (p.gender === 'Эрэгтэй' ? 'M' : 'W'); if(text[k]) text[k].push(p.name); });
+  const d = state.data || NO_DATA, text = {AM:[], BM:[], AW:[], BW:[]}, part = {};
+  const act = SPORTS.map(s => s.no);
+  d.players.forEach(p => { const k = p.team + (p.gender === 'Эрэгтэй' ? 'M' : 'W'); if(text[k]){ text[k].push(p.name); const ex = (p.sports || []).filter(n => act.includes(n)); if(ex.length && ex.length < act.length) part[pkey(k, p.name)] = new Set(ex); } });
   Object.keys(text).forEach(k => text[k] = text[k].join('\n'));
-  state.admin = {tab:'main', text, form:{teamA:d.teamA, teamB:d.teamB, tM:d.tM ?? 3, tW:d.tW ?? 2}, refs:null, log:null, msg:null};
+  const slots = Array.from({length:8}, (_, i) => { const s = SPORTS.find(x => x.no === i + 1); return s ? {name:s.label, gender:s.gender, tM:s.tM, tW:s.tW} : {name:'', gender:'Хоёулаа', tM:3, tW:2}; });
+  state.admin = {tab:'main', text, part, form:{teamA:d.teamA, teamB:d.teamB, sports:slots}, refs:null, log:null, msg:null};
   openModal('admin'); renderAdmin();
 }
 function adminMsg(type, text){ state.admin.msg = {type, text}; renderAdmin(); }
+function adminPlayers(){
+  const A = state.admin, out = [], act = SPORTS.map(s => s.no);
+  GROUPS.forEach(([k, t, g]) => lines(A.text[k]).forEach(name => out.push({k, team:t, gender:g, name, key:pkey(k, name), set:A.part[pkey(k, name)] || new Set(act)})));
+  return out;
+}
+function matrixHTML(){
+  const A = state.admin, d = state.data || NO_DATA, pl = adminPlayers();
+  if(!SPORTS.length) return '<p class="hint">Төрөл тохируулаагүй байна. «Үндсэн» таб дээрээс төрөл нэмж хадгална уу.</p>';
+  if(!pl.length) return '';
+  const off = d.locked || d.scored > 0;
+  const head = SPORTS.map(s => `<th title="${esc(s.label)}"><div class="mt">${esc(s.label)}</div><label class="mall"><input type="checkbox" data-all="${s.no}" ${off ? 'disabled' : ''}> бүгд</label></th>`).join('');
+  const rows = pl.map(p => `<tr><td class="pn2"><span class="tdot ${p.team === 'A' ? 'a' : 'b'}"></span>${esc(p.name)} <span class="hint">${p.gender === 'Эрэгтэй' ? '♂' : '♀'}</span></td>${SPORTS.map(s => {
+    const ok = s.gender === 'Хоёулаа' || s.gender === p.gender;
+    return ok ? `<td><input type="checkbox" data-pk="${esc(p.key)}" data-sn="${s.no}" ${p.set.has(s.no) ? 'checked' : ''} ${off ? 'disabled' : ''} aria-label="${esc(p.name)} — ${esc(s.label)}"></td>` : '<td class="na">—</td>';
+  }).join('')}</tr>`).join('');
+  return `<div class="mwrap"><table class="matrix"><thead><tr><th>Тамирчин</th>${head}</tr></thead><tbody>${rows}</tbody></table></div><p class="hint">Тамирчин бүрийн оролцох төрлийг тэмдэглэнэ. Эсрэг багийн оролцогч бүртэй тоглоно.</p>`;
+}
+function updateEst(){
+  const el = $('est'); if(!el || !state.admin) return;
+  const pl = adminPlayers().map(p => ({team:p.team, gender:p.gender, sports:[...p.set]}));
+  const cm = countMatches(SPORTS.map(s => ({no:s.no, name:s.label, gender:s.gender})), pl);
+  const parts = SPORTS.map(s => `${esc(s.label)}: <b>${cm.per[s.no] ?? 0}</b>`).join(' · ');
+  el.innerHTML = `${parts || ''}${parts ? '<br>' : ''}Нийт <b>${cm.total}</b> тоглолт${cm.total > 500 ? ' <span style="color:var(--bad);font-weight:800">⚠ дээд хязгаар 500-аас хэтэрсэн</span>' : ' (дээд хязгаар 500)'}.`;
+  GROUPS.forEach(([k]) => { const e = $('n' + k); if(e) e.textContent = lines(state.admin.text[k]).length; });
+}
+function renderMatrix(){ const el = $('pmatrix'); if(el) el.innerHTML = matrixHTML(); updateEst(); }
 async function renderAdmin(){
   const A = state.admin, d = state.data || NO_DATA; if(!A) return;
   const tabs = [['main','Үндсэн'],['roster','Тамирчид'],['refs','Шүүгчид'],['log','Лог']];
   let body = '';
   if(A.tab === 'main'){
-    body = `<div class="row2"><div class="field"><label for="fa">А багийн нэр</label><input id="fa" value="${esc(A.form.teamA)}" maxlength="40"></div><div class="field"><label for="fb">Б багийн нэр</label><input id="fb" value="${esc(A.form.teamB)}" maxlength="40"></div></div>
-      <div class="row2"><div class="field"><label for="tm">Эрэгтэй: түрүүлж хожих</label><input id="tm" type="number" min="1" max="9" value="${esc(A.form.tM)}"></div><div class="field"><label for="tw">Эмэгтэй: түрүүлж хожих</label><input id="tw" type="number" min="1" max="9" value="${esc(A.form.tW)}"></div></div>
-      ${d.scored ? '<p class="hint">⚠ Оноо оруулсан байна. Хожих хэмжээг өөрчилбөл тоглолтын төлөв өөрчлөгдөнө.</p>' : ''}
+    const f = A.form, off = d.locked || d.scored > 0;
+    body = `<div class="row2"><div class="field"><label for="fa">А багийн нэр</label><input id="fa" data-tf="teamA" value="${esc(f.teamA)}" maxlength="40"></div><div class="field"><label for="fb">Б багийн нэр</label><input id="fb" data-tf="teamB" value="${esc(f.teamB)}" maxlength="40"></div></div>
+      <div class="field"><label>Төрлүүд (1v1, дээд тал 8). Төрлийг хасахын тулд нэрийг арилгана.</label>
+      <div class="mwrap"><table class="matrix stbl"><thead><tr><th>№</th><th>Нэр</th><th>Хэн тоглох</th><th>Эр: түрүүлж</th><th>Эм: түрүүлж</th></tr></thead><tbody>${f.sports.map((s, i) => `<tr class="${s.name ? '' : 'dim'}"><td>${i + 1}</td>
+        <td><input data-si="${i}" data-sk="name" value="${esc(s.name)}" maxlength="30" placeholder="(хоосон)"></td>
+        <td><select data-si="${i}" data-sk="gender">${['Хоёулаа', 'Эрэгтэй', 'Эмэгтэй'].map(g => `<option ${s.gender === g ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
+        <td><input data-si="${i}" data-sk="tM" type="number" min="1" max="9" value="${esc(s.tM)}"></td>
+        <td><input data-si="${i}" data-sk="tW" type="number" min="1" max="9" value="${esc(s.tW)}"></td></tr>`).join('')}</tbody></table></div>
+      <p class="hint">${off ? '⚠ ' + (d.locked ? 'Хуваарь түгжигдсэн' : 'Оноо оруулсан') + ' тул төрөл нэмэх, хасах, «хэн тоглох»-ыг өөрчлөх боломжгүй. Нэр, хожих хэмжээг л өөрчилнө.' : 'Шатар, даамд тэнцвэл тоглолтыг дахин тоглуулж, оноо оруулахгүй. Боулингийг өндөр оноотой нь хожно (1:0).'}</p></div>
       <button class="btn pri" data-act="saveSettings" type="button">Хадгалах</button>
       <div class="danger-zone"><b>Хуваарь ба оноо</b>
-        <p class="hint">${d.locked ? '🔒 Хуваарь түгжигдсэн: тамирчин нэмэх, хасах боломжгүй.' : '🔓 Хуваарь нээлттэй. Сугалааны дараа түгжиж баталгаажуулна.'}</p>
+        <p class="hint">${d.locked ? '🔒 Хуваарь түгжигдсэн: тамирчин, төрөл нэмэх, хасах боломжгүй.' : '🔓 Хуваарь нээлттэй. Сугалааны дараа түгжиж баталгаажуулна.'}</p>
         <button class="btn" data-act="toggleLock" type="button">${d.locked ? '🔓 Түгжээ нээх' : '🔒 Хуваарь батлах (түгжих)'}</button>
         <div class="field" style="margin-top:12px"><label for="rs">Бүх оноог цэвэрлэх (буцаахгүй) — «ЦЭВЭРЛЭХ» гэж бичнэ</label><input id="rs" autocomplete="off"></div>
         <button class="btn danger" data-act="resetScores" type="button">Бүх оноог цэвэрлэх</button></div>`;
   } else if(A.tab === 'roster'){
     const off = d.locked || d.scored > 0;
-    const n = k => lines(A.text[k]).length;
     body = `${off ? `<div class="msg err">${d.locked ? '🔒 Хуваарь түгжигдсэн тул тамирчдыг өөрчлөх боломжгүй. «Үндсэн» таб дээрээс түгжээг нээнэ үү.' : 'Оноо оруулсан тул тамирчдыг өөрчлөх боломжгүй. Эхлээд «Үндсэн» таб дээрээс бүх оноог цэвэрлэнэ үү.'}</div>` : '<p class="hint">Мөр бүрт нэг нэр. Бичсэн дараалал нь дугаарлалт болно, «Сугалах» товч дарааллыг санамсаргүй холино. Баг, хүйс бүрт дээд тал нь 10.</p>'}
-      <div class="row2">${GROUPS.map(([k, t, g]) => `<div class="field"><label for="g${k}">${esc(teamName(d, t))} — ${g === 'Эрэгтэй' ? '♂ эрэгтэй' : '♀ эмэгтэй'} (<span id="n${k}">${n(k)}</span>)</label><textarea id="g${k}" data-g="${k}" ${off ? 'disabled' : ''}>${esc(A.text[k])}</textarea></div>`).join('')}</div>
+      <div class="row2">${GROUPS.map(([k, t, g]) => `<div class="field"><label for="g${k}">${esc(teamName(d, t))} — ${g === 'Эрэгтэй' ? '♂ эрэгтэй' : '♀ эмэгтэй'} (<span id="n${k}">${lines(A.text[k]).length}</span>)</label><textarea id="g${k}" data-g="${k}" ${off ? 'disabled' : ''}>${esc(A.text[k])}</textarea></div>`).join('')}</div>
+      <div class="field"><label>Оролцох төрлүүд</label><div id="pmatrix">${matrixHTML()}</div></div>
       <p class="hint" id="est"></p>
       <button class="btn" data-act="shuffle" type="button" ${off ? 'disabled' : ''}>🎲 Сугалах (холих)</button> <button class="btn pri" data-act="saveRoster" type="button" ${off ? 'disabled' : ''}>Хадгалах</button>`;
   } else if(A.tab === 'refs'){
@@ -863,12 +951,6 @@ async function renderAdmin(){
   $('modalBody').innerHTML = `<h3>⚙ Тохиргоо (админ)</h3><div class="tabs">${tabs.map(([k, l]) => `<button class="fchip ${A.tab === k ? 'on' : ''}" data-act="tab" data-tab="${k}" type="button">${l}</button>`).join('')}</div>${A.msg ? `<div class="msg ${A.msg.type}">${esc(A.msg.text)}</div>` : ''}${body}`;
   if(A.tab === 'roster') updateEst();
 }
-function updateEst(){
-  const A = state.admin, n = k => lines(A.text[k]).length, el = $('est'); if(!el) return;
-  GROUPS.forEach(([k]) => { const e = $('n' + k); if(e) e.textContent = n(k); });
-  const per = n('AM') * n('BM') + n('AW') * n('BW');
-  el.textContent = `Төрөл бүрт ${per} тоглолт, нийт ${per * 3} тоглолт болно.`;
-}
 async function loadLog(){
   if(useDemo) return DemoApi.db.log.slice(-60).reverse();
   if(CONFIG.API_URL){ const r = await Api.call('getLog'); return r.ok ? r.rows : []; }
@@ -881,7 +963,7 @@ async function adminAct(act, el){
   const call = async (action, payload, okMsg, after) => {
     try{
       const r = await Api.call(action, payload);
-      if(r.ok){ if(after) await after(r); A.msg = {type:'ok', text:okMsg}; await refresh(); renderAdmin(); if(!useDemo) setTimeout(refresh, 2500); }
+      if(r.ok){ if(after) await after(r); A.msg = {type:'ok', text:okMsg(r)}; await refresh(); renderAdmin(); if(!useDemo) setTimeout(refresh, 2500); }
       else if(r.error === 'AUTH') handleApiError(r);
       else return r;
     }catch(e){ adminMsg('err', 'Серверт холбогдож чадсангүй.'); }
@@ -889,29 +971,33 @@ async function adminAct(act, el){
   };
   if(act === 'tab'){ A.tab = el.dataset.tab; A.msg = null; if(A.tab === 'refs') A.refs = null; if(A.tab === 'log') A.log = null; return renderAdmin(); }
   if(act === 'saveSettings'){
-    A.form = {teamA:$('fa').value, teamB:$('fb').value, tM:$('tm').value, tW:$('tw').value};
-    const pl = {teamA:A.form.teamA, teamB:A.form.teamB, targetM:+A.form.tM, targetW:+A.form.tW};
-    let r = await call('saveSettings', pl, 'Хадгалагдлаа.');
+    const pl = {teamA:A.form.teamA, teamB:A.form.teamB, sports:A.form.sports.map(s => ({name:s.name, gender:s.gender, targetM:+s.tM, targetW:+s.tW}))};
+    const r = await call('saveSettings', pl, x => `Хадгалагдлаа. Нийт ${x.matches} тоглолт.`);
     if(r && r.error === 'TARGET_HAS_SCORES'){
-      if(confirm(r.message + '\n\nҮргэлжлүүлэх үү?')) await call('saveSettings', {...pl, force:true}, 'Хадгалагдлаа.');
+      if(confirm(r.message + '\n\nҮргэлжлүүлэх үү?')){ const r2 = await call('saveSettings', {...pl, force:true}, x => `Хадгалагдлаа. Нийт ${x.matches} тоглолт.`); if(r2) adminMsg('err', r2.message); }
     } else if(r) adminMsg('err', r.message);
     return;
   }
-  if(act === 'toggleLock'){ const r = await call('setLock', {locked:!d.locked}, d.locked ? 'Түгжээ нээгдлээ.' : 'Хуваарь түгжигдлээ.'); if(r) adminMsg('err', r.message); return; }
+  if(act === 'toggleLock'){ const r = await call('setLock', {locked:!d.locked}, () => d.locked ? 'Түгжээ нээгдлээ.' : 'Хуваарь түгжигдлээ.'); if(r) adminMsg('err', r.message); return; }
   if(act === 'resetScores'){
     if(!confirm('Бүх оноо устна. Үнэхээр цэвэрлэх үү?')) return;
-    const r = await call('resetScores', {confirm:$('rs').value.trim()}, 'Бүх оноо цэвэрлэгдлээ.'); if(r) adminMsg('err', r.message); return;
+    const r = await call('resetScores', {confirm:$('rs').value.trim()}, () => 'Бүх оноо цэвэрлэгдлээ.'); if(r) adminMsg('err', r.message); return;
   }
   if(act === 'shuffle'){ GROUPS.forEach(([k]) => A.text[k] = shuffleArr(lines(A.text[k])).join('\n')); A.msg = {type:'ok', text:'Дараалал санамсаргүй холигдлоо. Хадгалахаа бүү мартаарай.'}; return renderAdmin(); }
   if(act === 'saveRoster'){
-    const players = []; let dup = null;
-    GROUPS.forEach(([k, t, g]) => { const ls = lines(A.text[k]); if(new Set(ls.map(x => x.toLowerCase())).size !== ls.length) dup = k; ls.forEach(name => players.push({team:t, gender:g, name})); });
+    const act2 = SPORTS.map(s => s.no), players = []; let dup = null, none = null;
+    GROUPS.forEach(([k, t, g]) => { const ls = lines(A.text[k]); if(new Set(ls.map(x => x.toLowerCase())).size !== ls.length) dup = k;
+      ls.forEach(name => { const set = A.part[pkey(k, name)] || new Set(act2); const mine = act2.filter(n => set.has(n) && (SPORTS.find(s => s.no === n).gender === 'Хоёулаа' || SPORTS.find(s => s.no === n).gender === g));
+        if(!mine.length && act2.length) none = name;
+        const eligible = act2.filter(n => SPORTS.find(s => s.no === n).gender === 'Хоёулаа' || SPORTS.find(s => s.no === n).gender === g);
+        players.push({team:t, gender:g, name, sports:mine.length === eligible.length ? [] : mine}); }); });
+    if(none){ adminMsg('err', `«${none}» ямар ч төрөлд оролцохгүй байна. Дор хаяж нэг төрөл сонгоно уу, эсвэл жагсаалтаас хасна уу.`); return; }
     if(dup && !confirm('Нэг жагсаалтад ижил нэр давхардсан байна. Үргэлжлүүлэх үү?')) return;
-    const r = await call('saveRoster', {players}, `${players.length} тамирчин хадгалагдлаа. Хуваарь шинэчлэгдлээ.`); if(r) adminMsg('err', r.message); return;
+    const r = await call('saveRoster', {players}, x => `${players.length} тамирчин хадгалагдлаа. Нийт ${x.matches} тоглолт.`); if(r) adminMsg('err', r.message); return;
   }
-  if(act === 'refAdd'){ const r = await call('addReferee', {name:$('rn').value, pin:$('rp').value}, 'Шүүгч нэмэгдлээ.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
-  if(act === 'refPin'){ const pin = prompt('Шинэ PIN (4–12 үсэг, тоо):'); if(!pin) return; const r = await call('resetRefereePin', {id:el.dataset.id, pin}, 'PIN солигдлоо.'); if(r) adminMsg('err', r.message); return; }
-  if(act === 'refDel'){ if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const r = await call('removeReferee', {id:el.dataset.id}, 'Шүүгч устгагдлаа.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refAdd'){ const r = await call('addReferee', {name:$('rn').value, pin:$('rp').value}, () => 'Шүүгч нэмэгдлээ.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refPin'){ const pin = prompt('Шинэ PIN (4–12 үсэг, тоо):'); if(!pin) return; const r = await call('resetRefereePin', {id:el.dataset.id, pin}, () => 'PIN солигдлоо.'); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refDel'){ if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const r = await call('removeReferee', {id:el.dataset.id}, () => 'Шүүгч устгагдлаа.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
 }
 
 /* ---------- Зураг болгох (canvas; олон зурагт хуваана) ---------- */
@@ -961,7 +1047,8 @@ function snapHeader(x, d, sub, y0){
 }
 
 function snapSummary(d, stamp){
-  const {P, W, C} = SNAP, H = 1240, {c, x} = snapCanvas(H);
+  const {P, W, C} = SNAP, K = SPORTS.length, rowsN = Math.max(1, Math.ceil(K / 3)), ch = 350, gap = 20;
+  const H = 1300 + (rowsN - 1) * (ch + gap), {c, x} = snapCanvas(H);
   snapHeader(x, d, 'Ерөнхий дүн', P);
   const hy = 170, hh = 470, hw = W - 2 * P;
   rrect(x, P, hy, hw, hh, 24, C.card, C.line);
@@ -969,14 +1056,14 @@ function snapSummary(d, stamp){
   const cxA = P + 215, cxB = W - P - 215;
   [['A', cxA, C.a, d.teamA], ['B', cxB, C.b, d.teamB]].forEach(([t, cx, col, name]) => {
     x.font = `800 34px ${SNAP.FONT}`; const nw = Math.min(x.measureText(name).width, 300);
-    rrect(x, cx - nw / 2 - 28, hy + 62, 18, 18, 5, col); stx(x, name, cx - nw / 2 + 4 - 4 + 0, hy + 80, {size:34, weight:800, color:col, max:300});
+    rrect(x, cx - nw / 2 - 28, hy + 62, 18, 18, 5, col); stx(x, name, cx - nw / 2, hy + 80, {size:34, weight:800, color:col, max:300});
     const sc = d.pts[t]; stx(x, sc, cx, hy + 250, {size:sc >= 100 ? 120 : 170, weight:800, color:col, align:'center', font:SNAP.DISP});
     stx(x, `Хожсон гейм: ${d.games[t]}`, cx, hy + 305, {size:24, color:C.muted, align:'center'});
     if(lead === t && !finished) rrect(x, cx - 90, hy + 322, 180, 8, 4, col);
   });
   stx(x, 'VS', W / 2, hy + 190, {size:30, weight:800, color:C.muted, align:'center', font:SNAP.DISP});
   const winName = finished ? (lead ? teamName(d, lead) : (d.games.A !== d.games.B ? (d.games.A > d.games.B ? d.teamA : d.teamB) : '')) : '';
-  let status = !d.doneCount ? 'Тэмцээн эхлээгүй' : finished ? 'Тэмцээн дууслаа' : (lead ? `${teamName(d, lead)} тэргүүлж байна` : 'Тэнцэж байна');
+  const status = !d.doneCount ? 'Тэмцээн эхлээгүй' : finished ? 'Тэмцээн дууслаа' : (lead ? `${teamName(d, lead)} тэргүүлж байна` : 'Тэнцэж байна');
   if(finished){ rrect(x, P + 40, hy + 352, hw - 80, 56, 16, C.okS); stx(x, winName ? `ХОЖЛОО: ${winName}` : 'ТЭНЦЛЭЭ', W / 2, hy + 390, {size:28, weight:800, color:C.ok, align:'center', max:hw - 120}); }
   else stx(x, status, W / 2, hy + 392, {size:30, weight:800, align:'center', max:hw - 80});
   const pct = d.total ? d.doneCount / d.total : 0, bx = P + 40, bw = hw - 80;
@@ -984,53 +1071,78 @@ function snapSummary(d, stamp){
   stx(x, `${d.doneCount} / ${d.total} тоглолт дууссан`, bx, hy + 458, {size:20, color:C.muted});
   stx(x, `${Math.round(pct * 100)}%`, bx + bw, hy + 458, {size:20, color:C.muted, align:'right'});
 
-  let y = hy + hh + 56;
+  const y = hy + hh + 56;
   stx(x, 'Төрөл тус бүрийн дүн', P, y, {size:30, weight:800, font:SNAP.DISP, max:600});
-  const cy = y + 28, gap = 20, cw = (W - 2 * P - 2 * gap) / 3, ch = 360;
+  const cy0 = y + 28, cw = (W - 2 * P - 2 * gap) / 3;
   SPORTS.forEach((s, i) => {
-    const cx = P + i * (cw + gap), bs = d.bySport[s.key];
+    const cx = P + (i % 3) * (cw + gap), cy = cy0 + Math.floor(i / 3) * (ch + gap), bs = d.bySport[s.key];
     rrect(x, cx, cy, cw, ch, 20, C.card, C.line);
-    stx(x, s.label, cx + 24, cy + 52, {size:26, weight:800, max:cw - 48});
+    stx(x, s.label, cx + 24, cy + 52, {size:s.label.length > 14 ? 24 : 28, weight:800, max:cw - 48});
     const mt = d.matches.filter(m => m.sport === s.key), done = mt.filter(m => m.status === DONE).length;
-    const row = (lab, g, yy) => { stx(x, lab, cx + 24, yy, {size:24, color:C.muted}); scoreStr(x, bs[g].A, bs[g].B, cx + cw - 24, yy + 2, 38, SNAP.DISP); };
+    const row = (lab, g, yy) => {
+      stx(x, lab, cx + 24, yy, {size:24, color:C.muted});
+      if(s.gender === 'Хоёулаа' || s.gender === g) scoreStr(x, bs[g].A, bs[g].B, cx + cw - 24, yy + 2, 38, SNAP.DISP); else stx(x, '—', cx + cw - 24, yy, {size:30, color:C.line, align:'right'});
+    };
     row('Эрэгтэй', 'Эрэгтэй', cy + 120); row('Эмэгтэй', 'Эмэгтэй', cy + 196);
     x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(cx + 24, cy + 226); x.lineTo(cx + cw - 24, cy + 226); x.stroke();
     stx(x, 'Нийт', cx + 24, cy + 286, {size:26, weight:800});
     scoreStr(x, bs['Эрэгтэй'].A + bs['Эмэгтэй'].A, bs['Эрэгтэй'].B + bs['Эмэгтэй'].B, cx + cw - 24, cy + 288, 44, SNAP.DISP);
-    stx(x, `Дууссан: ${done} / ${mt.length}`, cx + 24, cy + 338, {size:20, color:C.muted});
+    stx(x, `Дууссан: ${done} / ${mt.length}`, cx + 24, cy + 332, {size:20, color:C.muted});
   });
-  const fy = cy + ch + 56;
-  stx(x, `Хожсон тоглолт бүр 1 оноо · Эрэгтэй түрүүлж ${d.tM ?? 3}, эмэгтэй түрүүлж ${d.tW ?? 2} гейм хожно`, W / 2, fy, {size:20, color:C.muted, align:'center', max:W - 2 * P});
+  if(!K) stx(x, 'Төрөл тохируулаагүй байна', P, cy0 + 40, {size:24, color:C.muted});
+  const fy = cy0 + rowsN * ch + (rowsN - 1) * gap + 56;
+  stx(x, 'Хожсон тоглолт бүр 1 оноо · Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно', W / 2, fy, {size:20, color:C.muted, align:'center', max:W - 2 * P});
   stx(x, `Шинэчилсэн: ${stamp}`, W / 2, fy + 32, {size:20, color:C.muted, align:'center'});
-  return finishSnap(c, x, fy + 56, H);
+  return {c, usedH:Math.ceil(fy + 56)};
 }
-function finishSnap(c, x, usedH, H){ return {c, usedH: Math.ceil(usedH)}; }
 
-function snapRounds(d, rounds, page, pages, stamp, curN){
-  const {P, W, C} = SNAP, rowH = 100, cellH = 92, top = 184, H = top + rounds.length * rowH + 90, {c, x} = snapCanvas(H);
+function packRounds(rounds, wide){
+  const rowH = 100, budget = 1400, maxPer = 12, pages = []; let cur = [], h = 0;
+  rounds.forEach(r => {
+    const n = r.matches.filter(Boolean).length, bh = (wide ? Math.max(1, Math.ceil(n / 2)) : 1) * rowH;
+    if(cur.length && (h + bh > budget || cur.length >= maxPer)){ pages.push(cur); cur = []; h = 0; }
+    cur.push({r, h:bh}); h += bh;
+  });
+  if(cur.length) pages.push(cur);
+  return pages;
+}
+function snapCell(x, m, cx, y, cw, showSport){
+  const C = SNAP.C, cellH = 92, st = m.status, stripe = st === DONE ? C.ok : st === LIVE ? C.live : C.line, fill = st === LIVE ? C.liveS : st === DONE ? C.card : C.s2;
+  rrect(x, cx, y, cw, cellH, 14, fill, C.line); rrect(x, cx, y, 8, cellH, 4, stripe);
+  const sp = SPORTS.find(s => s.key === m.sport), gtxt = m.gender === 'Эмэгтэй' ? 'эмэгтэй' : 'эрэгтэй';
+  stx(x, showSport && sp ? `${sp.label} · ${gtxt}` : gtxt, cx + 22, y + 20, {size:14, weight:700, color:C.muted, max:cw - 150});
+  if(st === LIVE) stx(x, 'тоглож байна', cx + cw - 14, y + 20, {size:14, weight:800, color:C.live, align:'right'});
+  const line = (name, sc, win, col, yy) => {
+    rrect(x, cx + 22, yy - 12, 10, 10, 3, col);
+    stx(x, (win ? '✓ ' : '') + name, cx + 40, yy, {size:23, weight:win ? 800 : 600, color:win ? col : C.text, max:cw - 40 - 56});
+    stx(x, st === PEND ? '–' : (sc ?? 0), cx + cw - 16, yy, {size:26, weight:800, color:st === DONE && !win ? C.muted : C.text, align:'right', font:SNAP.DISP});
+  };
+  line(m.aName, m.fa, st === DONE && m.winTeam === 'A', C.a, y + 50); line(m.bName, m.fb, st === DONE && m.winTeam === 'B', C.b, y + 80);
+}
+function snapRounds(d, blocks, page, pages, stamp, curN, wide){
+  const {P, W, C} = SNAP, rowH = 100, top = 184, total = blocks.reduce((n, b) => n + b.h, 0), H = top + total + 90, {c, x} = snapCanvas(H);
+  const rounds = blocks.map(b => b.r), K = SPORTS.length;
   snapHeader(x, d, `Тойргийн дүн · ${rounds[0].n}–${rounds[rounds.length - 1].n}-р тойрог · ${page}/${pages}`, P);
-  const rc = 104, gap = 10, cw = (W - 2 * P - rc - 2 * gap) / 3;
+  const rc = 104, gap = 10, cw = wide ? (W - 2 * P - rc - gap) / 2 : (W - 2 * P - rc - (K - 1) * gap) / Math.max(K, 1);
   stx(x, 'Тойрог', P, top - 14, {size:20, weight:800, color:C.muted});
-  SPORTS.forEach((s, i) => stx(x, s.label, P + rc + i * (cw + gap) + cw / 2, top - 14, {size:22, weight:800, align:'center'}));
-  rounds.forEach((r, ri) => {
-    const y = top + ri * rowH, cur = r.n === curN;
-    if(cur) rrect(x, P - 12, y - 6, W - 2 * P + 24, rowH - 2, 18, C.liveS);
+  if(!wide) SPORTS.forEach((s, i) => stx(x, s.label, P + rc + i * (cw + gap) + cw / 2, top - 14, {size:22, weight:800, align:'center', max:cw - 10}));
+  let y = top;
+  blocks.forEach(({r, h}) => {
+    const cur = r.n === curN;
+    if(cur) rrect(x, P - 12, y - 6, W - 2 * P + 24, h - 2, 18, C.liveS);
     stx(x, r.n, P + 40, y + 52, {size:36, weight:800, align:'center', font:SNAP.DISP});
     if(r.complete) stx(x, '✓', P + 40, y + 84, {size:22, weight:800, color:C.ok, align:'center'}); else if(cur) stx(x, 'ОДОО', P + 40, y + 84, {size:17, weight:800, color:C.live, align:'center'});
-    SPORTS.forEach((s, si) => {
-      const m = r.matches[si], cx = P + rc + si * (cw + gap);
-      if(!m){ rrect(x, cx, y, cw, cellH, 14, null, C.line, 1.5); stx(x, '—', cx + cw / 2, y + 56, {size:26, color:C.line, align:'center'}); return; }
-      const st = m.status, stripe = st === DONE ? C.ok : st === LIVE ? C.live : C.line, fill = st === LIVE ? C.liveS : st === DONE ? C.card : C.s2;
-      rrect(x, cx, y, cw, cellH, 14, fill, C.line); rrect(x, cx, y, 8, cellH, 4, stripe);
-      stx(x, m.gender === 'Эмэгтэй' ? 'эмэгтэй' : 'эрэгтэй', cx + 22, y + 20, {size:14, weight:700, color:C.muted});
-      if(st === LIVE) stx(x, 'тоглож байна', cx + cw - 14, y + 20, {size:14, weight:800, color:C.live, align:'right'});
-      const line = (name, sc, win, col, yy) => {
-        rrect(x, cx + 22, yy - 12, 10, 10, 3, col);
-        stx(x, (win ? '✓ ' : '') + name, cx + 40, yy, {size:23, weight:win ? 800 : 600, color:win ? col : C.text, max:cw - 40 - 56});
-        stx(x, st === PEND ? '–' : (sc ?? 0), cx + cw - 16, yy, {size:26, weight:800, color:st === DONE && !win ? C.muted : C.text, align:'right', font:SNAP.DISP});
-      };
-      line(m.aName, m.fa, st === DONE && m.winTeam === 'A', C.a, y + 50); line(m.bName, m.fb, st === DONE && m.winTeam === 'B', C.b, y + 80);
-    });
+    if(wide){
+      r.matches.filter(Boolean).forEach((m, i) => snapCell(x, m, P + rc + (i % 2) * (cw + gap), y + Math.floor(i / 2) * rowH, cw, true));
+    } else {
+      SPORTS.forEach((s, si) => {
+        const m = r.matches[si], cx = P + rc + si * (cw + gap);
+        if(!m){ rrect(x, cx, y, cw, 92, 14, null, C.line, 1.5); stx(x, '—', cx + cw / 2, y + 56, {size:26, color:C.line, align:'center'}); return; }
+        snapCell(x, m, cx, y, cw, false);
+      });
+    }
+    if(wide){ x.strokeStyle = C.line; x.lineWidth = 1.5; x.beginPath(); x.moveTo(P + rc, y + h - 4); x.lineTo(W - P, y + h - 4); x.stroke(); }
+    y += h;
   });
   stx(x, `Шинэчилсэн: ${stamp}`, W / 2, H - 30, {size:20, color:C.muted, align:'center'});
   return {c, usedH:H};
@@ -1072,11 +1184,11 @@ async function buildSnapshots(d, opt){
   const stamp = fmtStamp(new Date()), out = [], curN = d.cur >= 0 ? d.rounds[d.cur].n : -1;
   const s1 = snapSummary(d, stamp); out.push({name:'tournament-1-summary.png', title:'1. Ерөнхий дүн, төрөл тус бүрийн дүн', c:cropCanvas(s1.c, s1.usedH)});
   let rounds = d.rounds; if(opt.started) rounds = rounds.filter(r => r.matches.some(m => m && m.status !== PEND));
-  const pages = Math.ceil(rounds.length / SNAP.ROUNDS_PER_PAGE);
-  for(let i = 0; i < pages; i++){
-    const chunk = rounds.slice(i * SNAP.ROUNDS_PER_PAGE, (i + 1) * SNAP.ROUNDS_PER_PAGE), s2 = snapRounds(d, chunk, i + 1, pages, stamp, curN);
-    out.push({name:`tournament-2-rounds-${pad2(i + 1)}.png`, title:`2. Тойргийн дүн (${i + 1}/${pages}): ${chunk[0].n}–${chunk[chunk.length - 1].n}-р тойрог`, c:s2.c});
-  }
+  const wide = SPORTS.length > 3, pagesArr = packRounds(rounds, wide), pages = pagesArr.length;
+  pagesArr.forEach((blocks, i) => {
+    const s2 = snapRounds(d, blocks, i + 1, pages, stamp, curN, wide);
+    out.push({name:`tournament-2-rounds-${pad2(i + 1)}.png`, title:`2. Тойргийн дүн (${i + 1}/${pages}): ${blocks[0].r.n}–${blocks[blocks.length - 1].r.n}-р тойрог`, c:s2.c});
+  });
   if(d.players.length){ const s3 = snapRank(d, stamp); out.push({name:'tournament-3-ranking.png', title:'3. Тамирчдын эрэмбэ', c:cropCanvas(s3.c, s3.usedH)}); }
   for(const o of out){ o.blob = await new Promise(res => o.c.toBlob(res, 'image/png')); o.url = URL.createObjectURL(o.blob); o.w = o.c.width; o.h = o.c.height; }
   return out;
@@ -1134,9 +1246,31 @@ document.addEventListener('click', e => {
   const ro = t.closest && t.closest('.match.readonly');
   if(ro && state.session && !state.modal) toast(`Энэ тоглолтыг ${ro.dataset.owner || 'өөр шүүгч'} шүүж байна. Зөвхөн тэр шүүгч эсвэл админ засна.`);
 });
-document.addEventListener('change', e => { if(state.modal === 'img' && e.target.id === 'imgOpt'){ state.snap.opt.started = e.target.checked; genSnaps(); } });
+document.addEventListener('change', e => {
+  const tg = e.target;
+  if(state.modal === 'img' && tg.id === 'imgOpt'){ state.snap.opt.started = tg.checked; genSnaps(); return; }
+  if(state.modal === 'admin' && state.admin){
+    if(tg.dataset && tg.dataset.pk !== undefined){
+      const A = state.admin, key = tg.dataset.pk, n = +tg.dataset.sn;
+      if(!A.part[key]) A.part[key] = new Set(SPORTS.map(s => s.no));
+      tg.checked ? A.part[key].add(n) : A.part[key].delete(n);
+      if(A.part[key].size >= SPORTS.length) delete A.part[key];
+      updateEst(); return;
+    }
+    if(tg.dataset && tg.dataset.all !== undefined){
+      const n = +tg.dataset.all, A = state.admin;
+      adminPlayers().forEach(p => { const ok = SPORTS.find(s => s.no === n); if(ok.gender === 'Хоёулаа' || ok.gender === p.gender){ if(!A.part[p.key]) A.part[p.key] = new Set(p.set); tg.checked ? A.part[p.key].add(n) : A.part[p.key].delete(n); if(A.part[p.key].size >= SPORTS.length) delete A.part[p.key]; } });
+      renderMatrix(); return;
+    }
+    if(tg.dataset && tg.dataset.si !== undefined && tg.tagName === 'SELECT'){ state.admin.form.sports[+tg.dataset.si][tg.dataset.sk] = tg.value; }
+  }
+});
+let mxT;
 document.addEventListener('input', e => {
-  if(state.modal === 'admin' && e.target.dataset && e.target.dataset.g){ state.admin.text[e.target.dataset.g] = e.target.value; updateEst(); }
+  const tg = e.target; if(state.modal !== 'admin' || !state.admin || !tg.dataset) return;
+  if(tg.dataset.g){ state.admin.text[tg.dataset.g] = tg.value; clearTimeout(mxT); mxT = setTimeout(renderMatrix, 250); }
+  else if(tg.dataset.si !== undefined && tg.tagName === 'INPUT'){ state.admin.form.sports[+tg.dataset.si][tg.dataset.sk] = tg.value; tg.closest('tr').classList.toggle('dim', tg.dataset.sk === 'name' ? !tg.value.trim() : tg.closest('tr').classList.contains('dim')); }
+  else if(tg.dataset.tf){ state.admin.form[tg.dataset.tf] = tg.value; }
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && state.modal === 'login' && e.target.id === 'lp') doLogin();
