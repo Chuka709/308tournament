@@ -884,6 +884,16 @@ function openAdmin(){
   state.admin = {tab:'main', text, part, form:{teamA:d.teamA, teamB:d.teamB, sports:slots}, refs:null, log:null, msg:null};
   openModal('admin'); renderAdmin();
 }
+const CATALOG = ['Дартс', 'Ширээний теннис', 'Биллиард', 'Шатар', 'Даам', 'Лудо', 'Боулинг', 'Бадминтон', 'Сур харвалт', 'Гар барилдаан', 'Компьютер тоглоом (1v1)', 'Дженга'];
+function sportPick(f, i){
+  const s = f.sports[i], name = s.name.trim();
+  const used = new Set(f.sports.map((x, j) => j === i ? '' : x.name.trim().toLowerCase()).filter(Boolean));
+  const custom = (name && !CATALOG.includes(name)) || s._custom;
+  const opts = ['<option value="">— төрөл сонгох —</option>']
+    .concat(CATALOG.filter(n => !used.has(n.toLowerCase())).map(n => `<option ${name === n && !custom ? 'selected' : ''}>${esc(n)}</option>`))
+    .concat([`<option value="__custom" ${custom ? 'selected' : ''}>✎ Өөр нэр бичих…</option>`]);
+  return `<select data-si="${i}" data-sk="pick" aria-label="${i + 1}-р төрөл">${opts.join('')}</select>${custom ? `<input data-si="${i}" data-sk="name" value="${esc(s.name)}" maxlength="30" placeholder="Төрлийн нэр" style="margin-top:4px">` : ''}`;
+}
 function adminMsg(type, text){ state.admin.msg = {type, text}; renderAdmin(); }
 function adminPlayers(){
   const A = state.admin, out = [], act = SPORTS.map(s => s.no);
@@ -920,7 +930,7 @@ async function renderAdmin(){
     body = `<div class="row2"><div class="field"><label for="fa">А багийн нэр</label><input id="fa" data-tf="teamA" value="${esc(f.teamA)}" maxlength="40"></div><div class="field"><label for="fb">Б багийн нэр</label><input id="fb" data-tf="teamB" value="${esc(f.teamB)}" maxlength="40"></div></div>
       <div class="field"><label>Төрлүүд (1v1, дээд тал 8). Төрлийг хасахын тулд нэрийг арилгана.</label>
       <div class="mwrap"><table class="matrix stbl"><thead><tr><th>№</th><th>Нэр</th><th>Хэн тоглох</th><th>Эр: түрүүлж</th><th>Эм: түрүүлж</th></tr></thead><tbody>${f.sports.map((s, i) => `<tr class="${s.name ? '' : 'dim'}"><td>${i + 1}</td>
-        <td><input data-si="${i}" data-sk="name" value="${esc(s.name)}" maxlength="30" placeholder="(хоосон)"></td>
+        <td>${sportPick(f, i)}</td>
         <td><select data-si="${i}" data-sk="gender">${['Хоёулаа', 'Эрэгтэй', 'Эмэгтэй'].map(g => `<option ${s.gender === g ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
         <td><input data-si="${i}" data-sk="tM" type="number" min="1" max="9" value="${esc(s.tM)}"></td>
         <td><input data-si="${i}" data-sk="tW" type="number" min="1" max="9" value="${esc(s.tW)}"></td></tr>`).join('')}</tbody></table></div>
@@ -1262,7 +1272,14 @@ document.addEventListener('change', e => {
       adminPlayers().forEach(p => { const ok = SPORTS.find(s => s.no === n); if(ok.gender === 'Хоёулаа' || ok.gender === p.gender){ if(!A.part[p.key]) A.part[p.key] = new Set(p.set); tg.checked ? A.part[p.key].add(n) : A.part[p.key].delete(n); if(A.part[p.key].size >= SPORTS.length) delete A.part[p.key]; } });
       renderMatrix(); return;
     }
-    if(tg.dataset && tg.dataset.si !== undefined && tg.tagName === 'SELECT'){ state.admin.form.sports[+tg.dataset.si][tg.dataset.sk] = tg.value; }
+    if(tg.dataset && tg.dataset.si !== undefined && tg.tagName === 'SELECT'){
+      const s = state.admin.form.sports[+tg.dataset.si];
+      if(tg.dataset.sk === 'pick'){
+        if(tg.value === '__custom'){ s._custom = true; if(CATALOG.includes(s.name)) s.name = ''; }
+        else { s._custom = false; s.name = tg.value; }
+        renderAdmin();
+      } else s[tg.dataset.sk] = tg.value;
+    }
   }
 });
 let mxT;
