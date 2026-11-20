@@ -199,6 +199,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 .stbl td input,.stbl td select{width:100%;min-width:60px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:14px}
 .stbl tr.dim td input,.stbl tr.dim td select{opacity:.55}
 .tdot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}.tdot.a{background:var(--a)}.tdot.b{background:var(--b)}
+.cust{display:flex;gap:6px;align-items:center}.cust input{flex:1;min-width:150px}
+.stbl td:nth-child(2){min-width:250px}
 mark{background:var(--live-soft);color:var(--text);border-radius:4px;padding:0 2px;outline:1px solid var(--live)}
 .own{font-size:12px;color:var(--muted);font-weight:600}
 .match.readonly{cursor:not-allowed}
@@ -273,7 +275,7 @@ const CONFIG = {
   SHEET_ID: "11u2cyRwlmNB6TvRh5xmANP3WYnJTcoTbEZCVNaRbvaY",            // Google Sheets-ийн URL доторх урт ID (…/spreadsheets/d/<ЭНД>/edit). Хоосон бол DEMO өгөгдөл харуулна.
   REFRESH_SECONDS: 30,     // автоматаар шинэчлэх давтамж (секунд)
   TITLE: "Багийн тэмцээн", // хуудасны гарчиг
-  API_URL: "https://script.google.com/macros/s/AKfycbyVc9z2ZYYPenQbwQwTsgHXM81deWwYZA8rdlby6_59i_lWBYLCzj0KOAE8w9Nz2Uzp/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
+  API_URL: "https://script.google.com/macros/s/AKfycbzUj2P-IktEjtqWDGJJzottAhJ8EPk1vroHXTPTxBx6hQtmS-5XiQv579x5AB7M6f79/exec",             // Apps Script Web App-ийн /exec хаяг (засах горимд). Хоосон бол зөвхөн харах горим.
   TABS: { settings: "Тохиргоо", roster: "Тамирчид", matches: "Тоглолтууд" } // Sheets доторх табын нэрс
 };
 /* ======================================================= */
@@ -551,7 +553,7 @@ const DemoApi = {
       if(!name || name.length > 30) return bad('BAD_INPUT', 'Шүүгчийн нэр 1–30 тэмдэгт байх ёстой.');
       if(!/^[A-Za-z0-9]{4,12}$/.test(String(p.pin || ''))) return bad('BAD_INPUT', 'PIN нь 4–12 үсэг, тооноос бүрдэнэ.');
       if(d.referees.some(r => r.name.toLowerCase() === name.toLowerCase())) return bad('BAD_INPUT', 'Ийм нэртэй шүүгч бүртгэгдсэн байна.');
-      d.referees.push({id:'r' + Date.now().toString(36), name, pin:String(p.pin)}); this.log(sess.role, sess.name, 'addReferee', name); return ok({});
+      const nid = 'r' + Date.now().toString(36); d.referees.push({id:nid, name, pin:String(p.pin)}); this.log(sess.role, sess.name, 'addReferee', name); return ok({id:nid});
     }
     if(a === 'removeReferee'){ d.referees = d.referees.filter(r => r.id !== p.id); this.log(sess.role, sess.name, 'removeReferee', p.id); return ok({}); }
     if(a === 'resetRefereePin'){
@@ -616,7 +618,8 @@ function renderEvents(d){
   $('events').innerHTML = SPORTS.map(s => {
     const bs = d.bySport[s.key];
     const row = (g, lab) => `<div class="row"><span>${lab}</span><span class="sc2" aria-label="${esc(d.teamA)} ${bs[g].A}, ${esc(d.teamB)} ${bs[g].B}"><span class="ca">${bs[g].A}</span><span class="x">:</span><span class="cb">${bs[g].B}</span></span></div>`;
-    const rows = [s.gender !== 'Эмэгтэй' && row('Эрэгтэй', '♂ Эрэгтэй'), s.gender !== 'Эрэгтэй' && row('Эмэгтэй', '♀ Эмэгтэй')].filter(Boolean).join('');
+    const has = g => (s.gender === 'Хоёулаа' || s.gender === g) && (!d.matches.length || d.matches.some(m => m.sport === s.key && m.gender === g));
+    const rows = [has('Эрэгтэй') && row('Эрэгтэй', '♂ Эрэгтэй'), has('Эмэгтэй') && row('Эмэгтэй', '♀ Эмэгтэй')].filter(Boolean).join('') || '<div class="row"><span class="small">Тоглолт алга</span></div>';
     return `<div class="card ev"><div class="t"><span>${s.icon}</span>${esc(s.label)}</div>${rows}</div>`;
   }).join('');
 }
@@ -686,7 +689,9 @@ function renderSchedule(d){
 function renderBoards(d){
   const li = p => { const df = p.gw - p.gl; return `<li><span class="rk">${p.pos}</span><span class="who"><b>${esc(p.name)}</b><span>${esc(teamName(d, p.team))} · ${p.played} тоглолт</span></span><span class="w">${p.wins}</span><span class="d">${df > 0 ? '+' : ''}${df}</span></li>`; };
   const box = (t, l) => `<div class="card"><div style="font-weight:800;margin-bottom:4px">${t}</div><div class="lbh"><span></span><span>Тамирчин</span><span title="Хожсон тоглолт">Хожсон</span><span title="Хожсон гейм − алдсан гейм">Зөрүү</span></div>${l.length ? `<ul class="lb">${l.map(li).join('')}</ul>` : '<div class="empty">Тамирчин бүртгэгдээгүй</div>'}</div>`;
-  $('boards').innerHTML = box('♂ Эрэгтэй', d.men) + box('♀ Эмэгтэй', d.women);
+  const bx = [d.men.length && box('♂ Эрэгтэй', d.men), d.women.length && box('♀ Эмэгтэй', d.women)].filter(Boolean);
+  $('boards').style.gridTemplateColumns = bx.length === 1 ? '1fr' : '';
+  $('boards').innerHTML = bx.join('') || '<div class="card empty">Тамирчин бүртгэгдээгүй байна.</div>';
 }
 
 function renderBanners(){
@@ -700,17 +705,23 @@ function renderBanners(){
 
 function renderView(){ const d = state.data; if(!d) return; renderFilters(d); renderPCard(d); renderSchedule(d); syncReset(); }
 function renderHow(d){
+  const hasM = d.players.some(p => p.gender === 'Эрэгтэй'), hasW = d.players.some(p => p.gender === 'Эмэгтэй');
   const ms = SPORTS.filter(s => s.gender !== 'Эмэгтэй'), ws = SPORTS.filter(s => s.gender !== 'Эрэгтэй');
   const same = (arr, k) => arr.length && arr.every(s => s[k] === arr[0][k]) ? arr[0][k] : null;
-  const m = same(ms, 'tM'), w = same(ws, 'tW');
-  $('howT').innerHTML = (m && w) ? `Эрэгтэй — түрүүлж <b>${m}</b>, эмэгтэй — түрүүлж <b>${w}</b> гейм хожно` : 'Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно (төрөл бүрт өөр байж болно)';
+  const m = hasM ? same(ms, 'tM') : null, w = hasW ? same(ws, 'tW') : null;
+  const parts = [hasM && m && `эрэгтэй — түрүүлж <b>${m}</b>`, hasW && w && `эмэгтэй — түрүүлж <b>${w}</b>`].filter(Boolean);
+  const full = (hasM ? !!m : true) && (hasW ? !!w : true) && parts.length;
+  $('howT').innerHTML = full ? parts.join(', ').replace(/^./, c => c.toUpperCase()) + ' гейм хожно' : 'Түрүүлж хожих хэмжээнд хүрсэн тамирчин хожно (төрөл бүрт өөр байж болно)';
+}
+function updStamp(){
+  const t = (state.lastOk || new Date()).toLocaleTimeString('mn-MN', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+  $('upd').textContent = state.demo ? 'DEMO' : state.err ? 'Холболт тасарсан · сүүлд ' + t : 'Шууд · шинэчлэгдсэн ' + t;
+  $('dot').classList.toggle('off', state.demo || !!state.err);
 }
 function renderAll(){
   const d = state.data; if(!d) return;
   renderHow(d); renderHero(d); renderEvents(d); renderNow(d); renderView(); renderBoards(d); renderBanners();
-  const t = (state.lastOk || new Date()).toLocaleTimeString('mn-MN', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
-  $('upd').textContent = state.demo ? 'DEMO' : state.err ? 'Холболт тасарсан · сүүлд ' + t : 'Шууд · шинэчлэгдсэн ' + t;
-  $('dot').classList.toggle('off', state.demo || !!state.err);
+  updStamp();
 }
 
 const useDemo = (!CONFIG.SHEET_ID && !CONFIG.API_URL) || /[?&]demo(=1|=true)?(&|$)/.test(location.search);
@@ -754,15 +765,22 @@ let busy = false;
 async function refresh(){
   if(busy) return; busy = true;
   $('refresh').disabled = true; $('tools').classList.add('loading');
+  let skip = false;
   try{
     const raw = useDemo ? DemoApi.raw() : await loadFromSheet();
-    raw.matches.forEach(m => m.srv = {fa:m.fa, fb:m.fb});
-    applyPending(raw);
-    state.demo = useDemo; state.err = null; state.lastOk = new Date(); state.raw = raw; state.data = compute(raw);
+    const sig = JSON.stringify(raw) + '|' + (state.session ? state.session.id + state.session.role : '');
+    if(sig === state.sig && state.data && !state.err && state.pending.size === 0){ skip = true; state.lastOk = new Date(); }
+    else {
+      state.sig = sig;
+      raw.matches.forEach(m => m.srv = {fa:m.fa, fb:m.fb});
+      applyPending(raw);
+      state.demo = useDemo; state.err = null; state.lastOk = new Date(); state.raw = raw; state.data = compute(raw);
+    }
   }catch(e){
     state.err = e.message || String(e);
   }
   busy = false; $('refresh').disabled = false; $('tools').classList.remove('loading');
+  if(skip){ renderSession(); updStamp(); return; }
   renderSession();
   if(!state.data){ renderBanners(); $('upd').textContent = 'Холбогдож чадсангүй'; $('dot').classList.add('off'); return; }
   renderAll();
@@ -881,18 +899,20 @@ function openAdmin(){
   d.players.forEach(p => { const k = p.team + (p.gender === 'Эрэгтэй' ? 'M' : 'W'); if(text[k]){ text[k].push(p.name); const ex = (p.sports || []).filter(n => act.includes(n)); if(ex.length && ex.length < act.length) part[pkey(k, p.name)] = new Set(ex); } });
   Object.keys(text).forEach(k => text[k] = text[k].join('\n'));
   const slots = Array.from({length:8}, (_, i) => { const s = SPORTS.find(x => x.no === i + 1); return s ? {name:s.label, gender:s.gender, tM:s.tM, tW:s.tW} : {name:'', gender:'Хоёулаа', tM:3, tW:2}; });
-  state.admin = {tab:'main', text, part, form:{teamA:d.teamA, teamB:d.teamB, sports:slots}, refs:null, log:null, msg:null};
+  const A = state.admin = {tab:'main', text, part, form:{teamA:d.teamA, teamB:d.teamB, sports:slots}, refs:null, log:null, msg:null, busy:false};
   openModal('admin'); renderAdmin();
+  Api.call('listReferees').then(x => { if(state.admin === A && x.ok){ A.refs = x.referees; if(A.tab === 'refs' && state.modal === 'admin') renderAdmin(); } }).catch(() => {});
 }
 const CATALOG = ['Дартс', 'Ширээний теннис', 'Биллиард', 'Шатар', 'Даам', 'Лудо', 'Боулинг', 'Бадминтон', 'Сур харвалт', 'Гар барилдаан', 'Компьютер тоглоом (1v1)', 'Дженга'];
 function sportPick(f, i){
   const s = f.sports[i], name = s.name.trim();
   const used = new Set(f.sports.map((x, j) => j === i ? '' : x.name.trim().toLowerCase()).filter(Boolean));
   const custom = (name && !CATALOG.includes(name)) || s._custom;
+  if(custom) return `<div class="cust"><input data-si="${i}" data-sk="name" value="${esc(s.name)}" maxlength="30" placeholder="Төрлийн нэрээ бичнэ үү" autocomplete="off" aria-label="${i + 1}-р төрлийн нэр"><button class="btn" type="button" data-act="pickBack" data-si="${i}" title="Жагсаалтаас сонгох">↩ Жагсаалт</button></div>`;
   const opts = ['<option value="">— төрөл сонгох —</option>']
-    .concat(CATALOG.filter(n => !used.has(n.toLowerCase())).map(n => `<option ${name === n && !custom ? 'selected' : ''}>${esc(n)}</option>`))
-    .concat([`<option value="__custom" ${custom ? 'selected' : ''}>✎ Өөр нэр бичих…</option>`]);
-  return `<select data-si="${i}" data-sk="pick" aria-label="${i + 1}-р төрөл">${opts.join('')}</select>${custom ? `<input data-si="${i}" data-sk="name" value="${esc(s.name)}" maxlength="30" placeholder="Төрлийн нэр" style="margin-top:4px">` : ''}`;
+    .concat(CATALOG.filter(n => !used.has(n.toLowerCase())).map(n => `<option ${name === n ? 'selected' : ''}>${esc(n)}</option>`))
+    .concat(['<option value="__custom">✎ Өөр нэр бичих…</option>']);
+  return `<select data-si="${i}" data-sk="pick" aria-label="${i + 1}-р төрөл">${opts.join('')}</select>`;
 }
 function adminMsg(type, text){ state.admin.msg = {type, text}; renderAdmin(); }
 function adminPlayers(){
@@ -955,11 +975,18 @@ async function renderAdmin(){
       <button class="btn pri" data-act="refAdd" type="button">Шүүгч нэмэх</button>
       <p class="hint">Шүүгч бүр өөрийн нэр, PIN-ээр нэвтэрнэ. Лог хуудсанд хэн оноог оруулсан нь бичигдэнэ.</p>`;
   } else {
-    if(!A.log){ body = '<p class="hint">Ачаалж байна…</p>'; loadLog().then(l => { A.log = l; renderAdmin(); }).catch(() => { A.log = []; renderAdmin(); }); }
+    if(!A.log){ body = '<p class="hint">Ачаалж байна…</p>'; loadLogBg(); }
     else body = A.log.length ? A.log.map(r => `<div class="logrow"><b>${esc(r.t)}</b> · ${esc(r.name)} (${esc(r.role)}) · <b>${esc(r.act)}</b> ${esc(r.det)}</div>`).join('') : '<p class="hint">Лог хоосон байна.</p>';
   }
   $('modalBody').innerHTML = `<h3>⚙ Тохиргоо (админ)</h3><div class="tabs">${tabs.map(([k, l]) => `<button class="fchip ${A.tab === k ? 'on' : ''}" data-act="tab" data-tab="${k}" type="button">${l}</button>`).join('')}</div>${A.msg ? `<div class="msg ${A.msg.type}">${esc(A.msg.text)}</div>` : ''}${body}`;
   if(A.tab === 'roster') updateEst();
+  if(A.busy) $('modalBody').querySelectorAll('button[data-act]').forEach(b => b.disabled = true);
+  if(A._focus){ const f = document.querySelector(A._focus); if(f) f.focus(); A._focus = null; }
+}
+function loadLogBg(){
+  const A = state.admin; if(!A || A.logLoading) return; A.logLoading = true;
+  loadLog().then(l => { A.log = l; }).catch(() => { if(!A.log) A.log = []; })
+    .finally(() => { A.logLoading = false; if(state.modal === 'admin' && state.admin === A && A.tab === 'log') renderAdmin(); });
 }
 async function loadLog(){
   if(useDemo) return DemoApi.db.log.slice(-60).reverse();
@@ -970,16 +997,23 @@ async function loadLog(){
 function shuffleArr(a){ for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 async function adminAct(act, el){
   const A = state.admin, d = state.data || NO_DATA;
-  const call = async (action, payload, okMsg, after) => {
+  const call = async (action, payload, okMsg, opts = {}) => {
+    A.busy = true; A.msg = {type:'', text:'Хадгалж байна… (хуваарь шинэчлэгдэхэд хэдэн секунд зарцуулж болно)'}; renderAdmin();
+    let res = null;
     try{
       const r = await Api.call(action, payload);
-      if(r.ok){ if(after) await after(r); A.msg = {type:'ok', text:okMsg(r)}; await refresh(); renderAdmin(); if(!useDemo) setTimeout(refresh, 2500); }
-      else if(r.error === 'AUTH') handleApiError(r);
-      else return r;
-    }catch(e){ adminMsg('err', 'Серверт холбогдож чадсангүй.'); }
-    return null;
+      if(r.ok){
+        if(opts.after) opts.after(r);
+        A.busy = false; A.msg = {type:'ok', text:okMsg(r)}; renderAdmin();
+        if(opts.refresh !== false) (async () => { while(busy) await new Promise(z => setTimeout(z, 150)); await refresh(); if(state.modal === 'admin' && state.admin === A) renderAdmin(); })();
+      } else if(r.error === 'AUTH'){ A.busy = false; handleApiError(r); }
+      else res = r;
+    }catch(e){ A.busy = false; adminMsg('err', 'Серверт холбогдож чадсангүй.'); return null; }
+    A.busy = false;
+    return res;
   };
-  if(act === 'tab'){ A.tab = el.dataset.tab; A.msg = null; if(A.tab === 'refs') A.refs = null; if(A.tab === 'log') A.log = null; return renderAdmin(); }
+  if(act === 'pickBack'){ const s = A.form.sports[+el.dataset.si]; s._custom = false; s.name = ''; return renderAdmin(); }
+  if(act === 'tab'){ A.tab = el.dataset.tab; A.msg = null; if(A.tab === 'log') loadLogBg(); return renderAdmin(); }
   if(act === 'saveSettings'){
     const pl = {teamA:A.form.teamA, teamB:A.form.teamB, sports:A.form.sports.map(s => ({name:s.name, gender:s.gender, targetM:+s.tM, targetW:+s.tW}))};
     const r = await call('saveSettings', pl, x => `Хадгалагдлаа. Нийт ${x.matches} тоглолт.`);
@@ -1005,9 +1039,15 @@ async function adminAct(act, el){
     if(dup && !confirm('Нэг жагсаалтад ижил нэр давхардсан байна. Үргэлжлүүлэх үү?')) return;
     const r = await call('saveRoster', {players}, x => `${players.length} тамирчин хадгалагдлаа. Нийт ${x.matches} тоглолт.`); if(r) adminMsg('err', r.message); return;
   }
-  if(act === 'refAdd'){ const r = await call('addReferee', {name:$('rn').value, pin:$('rp').value}, () => 'Шүүгч нэмэгдлээ.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
-  if(act === 'refPin'){ const pin = prompt('Шинэ PIN (4–12 үсэг, тоо):'); if(!pin) return; const r = await call('resetRefereePin', {id:el.dataset.id, pin}, () => 'PIN солигдлоо.'); if(r) adminMsg('err', r.message); return; }
-  if(act === 'refDel'){ if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const r = await call('removeReferee', {id:el.dataset.id}, () => 'Шүүгч устгагдлаа.', async () => { A.refs = null; }); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refAdd'){
+    const nm = $('rn').value.trim(), pn = $('rp').value;
+    const r = await call('addReferee', {name:nm, pin:pn}, () => 'Шүүгч нэмэгдлээ.', {refresh:false, after:x => { A.refs = x.id ? (A.refs || []).concat([{id:x.id, name:nm}]) : null; }}); if(r) adminMsg('err', r.message); return;
+  }
+  if(act === 'refPin'){ const pin = prompt('Шинэ PIN (4–12 үсэг, тоо):'); if(!pin) return; const r = await call('resetRefereePin', {id:el.dataset.id, pin}, () => 'PIN солигдлоо.', {refresh:false}); if(r) adminMsg('err', r.message); return; }
+  if(act === 'refDel'){
+    if(!confirm(el.dataset.name + ' шүүгчийг устгах уу?')) return; const id = el.dataset.id;
+    const r = await call('removeReferee', {id}, () => 'Шүүгч устгагдлаа.', {refresh:false, after:() => { A.refs = (A.refs || []).filter(x => x.id !== id); }}); if(r) adminMsg('err', r.message); return;
+  }
 }
 
 /* ---------- Зураг болгох (canvas; олон зурагт хуваана) ---------- */
@@ -1057,7 +1097,8 @@ function snapHeader(x, d, sub, y0){
 }
 
 function snapSummary(d, stamp){
-  const {P, W, C} = SNAP, K = SPORTS.length, rowsN = Math.max(1, Math.ceil(K / 3)), ch = 350, gap = 20;
+  const {P, W, C} = SNAP, K = SPORTS.length, rowsN = Math.max(1, Math.ceil(K / 3)), gap = 20;
+  const gs = ['Эрэгтэй', 'Эмэгтэй'].filter(g => d.matches.some(m => m.gender === g)), ch = gs.length >= 2 ? 350 : 280;
   const H = 1300 + (rowsN - 1) * (ch + gap), {c, x} = snapCanvas(H);
   snapHeader(x, d, 'Ерөнхий дүн', P);
   const hy = 170, hh = 470, hw = W - 2 * P;
@@ -1089,15 +1130,15 @@ function snapSummary(d, stamp){
     rrect(x, cx, cy, cw, ch, 20, C.card, C.line);
     stx(x, s.label, cx + 24, cy + 52, {size:s.label.length > 14 ? 24 : 28, weight:800, max:cw - 48});
     const mt = d.matches.filter(m => m.sport === s.key), done = mt.filter(m => m.status === DONE).length;
-    const row = (lab, g, yy) => {
-      stx(x, lab, cx + 24, yy, {size:24, color:C.muted});
-      if(s.gender === 'Хоёулаа' || s.gender === g) scoreStr(x, bs[g].A, bs[g].B, cx + cw - 24, yy + 2, 38, SNAP.DISP); else stx(x, '—', cx + cw - 24, yy, {size:30, color:C.line, align:'right'});
-    };
-    row('Эрэгтэй', 'Эрэгтэй', cy + 120); row('Эмэгтэй', 'Эмэгтэй', cy + 196);
-    x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(cx + 24, cy + 226); x.lineTo(cx + cw - 24, cy + 226); x.stroke();
-    stx(x, 'Нийт', cx + 24, cy + 286, {size:26, weight:800});
-    scoreStr(x, bs['Эрэгтэй'].A + bs['Эмэгтэй'].A, bs['Эрэгтэй'].B + bs['Эмэгтэй'].B, cx + cw - 24, cy + 288, 44, SNAP.DISP);
-    stx(x, `Дууссан: ${done} / ${mt.length}`, cx + 24, cy + 332, {size:20, color:C.muted});
+    const gsS = gs.filter(g => (s.gender === 'Хоёулаа' || s.gender === g) && mt.some(m => m.gender === g));
+    const y0 = cy + 120, lastY = y0 + (Math.max(gsS.length, 1) - 1) * 76;
+    gsS.forEach((g, k) => { stx(x, g, cx + 24, y0 + k * 76, {size:24, color:C.muted}); scoreStr(x, bs[g].A, bs[g].B, cx + cw - 24, y0 + k * 76 + 2, 38, SNAP.DISP); });
+    const divY = lastY + 30, totY = divY + 60;
+    x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(cx + 24, divY); x.lineTo(cx + cw - 24, divY); x.stroke();
+    stx(x, 'Нийт', cx + 24, totY, {size:26, weight:800});
+    const ta = gsS.reduce((n, g) => n + bs[g].A, 0), tb = gsS.reduce((n, g) => n + bs[g].B, 0);
+    scoreStr(x, ta, tb, cx + cw - 24, totY + 2, 44, SNAP.DISP);
+    stx(x, `Дууссан: ${done} / ${mt.length}`, cx + 24, totY + 46, {size:20, color:C.muted});
   });
   if(!K) stx(x, 'Төрөл тохируулаагүй байна', P, cy0 + 40, {size:24, color:C.muted});
   const fy = cy0 + rowsN * ch + (rowsN - 1) * gap + 56;
@@ -1161,8 +1202,9 @@ function snapRounds(d, blocks, page, pages, stamp, curN, wide){
 function snapRank(d, stamp){
   const {P, W, C} = SNAP, rows = Math.max(d.men.length, d.women.length, 1), rowH = 84, top = 250, H = top + rows * rowH + 110, {c, x} = snapCanvas(H);
   snapHeader(x, d, 'Тамирчдын эрэмбэ', P);
-  const gap = 24, cw = (W - 2 * P - gap) / 2, medal = ['#f5c542', '#cfd5e3', '#d99a66'];
-  [['Эрэгтэй', d.men], ['Эмэгтэй', d.women]].forEach(([title, list], ci) => {
+  const gap = 24, medal = ['#f5c542', '#cfd5e3', '#d99a66'];
+  const cols = [['Эрэгтэй', d.men], ['Эмэгтэй', d.women]].filter(([, l]) => l.length), cw = cols.length === 1 ? W - 2 * P : (W - 2 * P - gap) / 2;
+  cols.forEach(([title, list], ci) => {
     const cx = P + ci * (cw + gap), ch = 96 + Math.max(list.length, 1) * rowH + 20;
     rrect(x, cx, 150, cw, ch, 22, C.card, C.line);
     stx(x, title, cx + 24, 150 + 46, {size:30, weight:800, font:SNAP.DISP});
@@ -1275,7 +1317,7 @@ document.addEventListener('change', e => {
     if(tg.dataset && tg.dataset.si !== undefined && tg.tagName === 'SELECT'){
       const s = state.admin.form.sports[+tg.dataset.si];
       if(tg.dataset.sk === 'pick'){
-        if(tg.value === '__custom'){ s._custom = true; if(CATALOG.includes(s.name)) s.name = ''; }
+        if(tg.value === '__custom'){ s._custom = true; if(CATALOG.includes(s.name)) s.name = ''; state.admin._focus = `input[data-si="${tg.dataset.si}"][data-sk="name"]`; }
         else { s._custom = false; s.name = tg.value; }
         renderAdmin();
       } else s[tg.dataset.sk] = tg.value;
@@ -1305,7 +1347,7 @@ if(!document.fullscreenEnabled) $('fs').hidden = true;
 $('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
 renderSession();
 function loop(){
-  setTimeout(async () => { if(!document.hidden && !state.modal) await refresh(); loop(); }, state.session ? 8000 : Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
+  setTimeout(async () => { if(!document.hidden && !state.modal) await refresh(); loop(); }, state.session ? 10000 : Math.max(10, CONFIG.REFRESH_SECONDS) * 1000);
 }
 refresh();
 if(!useDemo) loop();
